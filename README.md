@@ -53,6 +53,18 @@ cd flowmatch/backend
 python -m pytest tests -q
 ```
 
+## GitHub Pages
+
+The static frontend is deployed automatically from `main` by GitHub Actions.
+After the workflow completes, it is available at:
+
+`https://mainmagican.github.io/FlowMatch/`
+
+GitHub Pages does not run the Flask backend. The published frontend therefore
+needs a separately hosted API, and `frontend/js/api.js` currently points to
+the local development API at `http://127.0.0.1:8100/api`. The full demo still
+runs locally using the commands above.
+
 ## Notes
 
 - This is a demo/prototype app — the login flow uses simple dev-mode tokens,
