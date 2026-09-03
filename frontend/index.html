@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="bg-glow"></div>
+
+<header class="app-header">
+  <div class="brand">
+    <span class="brand-mark">⚡</span>
+    <span class="brand-name">FlowMatch</span>
+  </div>
+  <nav id="main-nav" class="hidden">
+    <button data-view="dashboard" class="nav-btn active">Dashboard</button>
+    <button data-view="profile" class="nav-btn">Profile</button>
+    <button data-view="opportunities" class="nav-btn">Opportunities</button>
+    <button data-view="workflows" class="nav-btn">Workflows</button>
+    <button data-view="org" class="nav-btn">Org</button>
+  </nav>
+  <div id="identity-box" class="hidden">
+    <div class="approvals-bell">
+      <button id="approvals-bell-btn" class="icon-btn" type="button" title="Pending approvals" aria-label="Pending approvals">
+        🔔<span id="approvals-bell-count" class="approvals-bell-count hidden">0</span>
+      </button>
+      <div id="approvals-bell-dropdown" class="approvals-bell-dropdown hidden">
+        <h4>Pending your approval</h4>
+        <div id="approvals-bell-list"></div>
+      </div>
+    </div>
+    <span id="identity-avatar"></span>
+    <span id="identity-role-badge" class="role-badge"></span>
+    <span id="identity-name"></span>
+    <div class="identity-menu">
+      <button id="identity-menu-btn" class="icon-btn" type="button" title="More options" aria-label="More options">☰</button>
+      <div id="identity-menu-dropdown" class="identity-menu-dropdown hidden">
+        <button data-view="audit" class="menu-item">🕵️ Audit</button>
+      </div>
+    </div>
+    <button id="logout-btn" class="ghost-btn">Sign out</button>
+  </div>
+</header>
+
+<main id="app">
+
+  <!-- Login -->
+  <section id="view-login" class="view">
+    <div class="login-shell">
+      <div class="login-hero">
+        <div class="hero-badge">✨ Explainable · Human-reviewed · Bias-free</div>
+        <h1>Work smarter, not harder.</h1>
+        <p class="hero-copy">FlowMatch connects people, skills and workflows across the whole company — so nobody has to solve the same problem twice, learn in a silo, or drown in backlog alone.</p>
+        <div class="hero-feature-grid">
+          <div class="hero-feature-card">
+            <span class="hero-feature-icon">🧩</span>
+            <h3>Break down the silos</h3>
+            <p>See how work actually flows end-to-end, across every department. Understand how your company really runs — not just your corner of it.</p>
+          </div>
+          <div class="hero-feature-card">
+            <span class="hero-feature-icon">🚀</span>
+            <h3>Grow beyond your team</h3>
+            <p>Learn from colleagues elsewhere in the company. Request shadowing across departments, or host someone on your own work and help them build a new skill.</p>
+          </div>
+          <div class="hero-feature-card">
+            <span class="hero-feature-icon">📤</span>
+            <h3>Share the load</h3>
+            <p>Struggling with a backlog? Push tasks out to the wider company — anyone with the right skills can pick them up and help you catch up.</p>
+          </div>
+          <div class="hero-feature-card">
+            <span class="hero-feature-icon">🤖</span>
+            <h3>Discover with AI</h3>
+            <p>AI scans workflows across departments to flag colleagues facing similar processes and challenges — so you can compare notes, automate, and share solutions.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card login-card">
+        <h2>Choose a demo persona</h2>
+        <p class="muted">No real SSO in this dev environment — pick any of the 239 seeded employees and a role to sign in as them.</p>
+        <input id="user-search" placeholder="🔍 Search by name, role, or department..." style="margin-bottom:10px" />
+        <div id="demo-user-list" class="demo-user-list"></div>
+        <p id="login-error" class="error"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="view-dashboard" class="view hidden">
+    <h2>Welcome back <span id="dash-name"></span> <span id="dash-role" class="pill accent"></span></h2>
+    <div class="grid-2">
+      <div class="card">
+        <h3>✨ Recommended for you <span class="badge ai">AI recommendation</span></h3>
+        <div id="dash-recommendations"></div>
+      </div>
+      <div class="card">
+        <h3>📌 Your active opportunities</h3>
+        <div id="dash-active"></div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>🎯 Your learning goals</h3>
+        <div id="dash-goals"></div>
+      </div>
+      <div class="card">
+        <h3>🕸️ Workflows relevant to you</h3>
+        <div id="dash-workflows"></div>
+      </div>
+    </div>
+    <div class="card" id="dash-my-drafts-card">
+      <h3>📝 Your drafts awaiting approval</h3>
+      <div id="dash-my-drafts"></div>
+    </div>
+    <div class="card" id="dash-pending-approval-card">
+      <h3>🗂️ Drafts awaiting your approval</h3>
+      <div id="dash-pending-approval"></div>
+    </div>
+    <div class="card" id="dash-team-requests-card">
+      <h3>📨 Your team's requests <span class="badge human">Visibility only — you still approve via the opportunity page</span></h3>
+      <div id="dash-team-requests"></div>
+    </div>
+  </section>
+
+  <!-- Org explorer -->
+  <section id="view-org" class="view hidden">
+    <div class="org-view-layout">
+      <div class="org-view-main">
+        <h3 class="skills-map-title">🧠 Company skills map</h3>
+        <div class="grid-2 skills-overview-row-compact" id="skills-overview-row">
+          <div class="card card-compact">
+            <h4>Skills available across the company</h4>
+            <div id="skills-available-panel"></div>
+          </div>
+          <div class="card card-compact">
+            <h4>What people want to learn</h4>
+            <div id="skills-wanted-panel"></div>
+          </div>
+        </div>
+
+        <h2 style="margin-top:24px">My org</h2>
+        <div id="my-org-tree"></div>
+
+        <div class="view-header-row" style="margin-top:28px">
+          <h2>Global org chart</h2>
+          <button class="secondary" id="expand-tree-btn">Expand all</button>
+        </div>
+        <div class="card"><div id="company-tree"></div></div>
+      </div>
+      <aside class="ai-readiness-benchmark card" id="ai-readiness-benchmark"></aside>
+    </div>
+  </section>
+
+  <!-- Skills / learning profile -->
+  <section id="view-profile" class="view hidden">
+    <h2>Skills &amp; learning profile</h2>
+    <div class="card">
+      <h3>AI readiness self-evaluation <span class="badge editable">Editable — never hidden</span></h3>
+      <p class="muted">On a scale of 0 (just getting started) to 10 (fully fluent), how AI-ready do you feel today?</p>
+      <div class="ai-readiness-slider-row">
+        <input type="range" id="ai-readiness-slider" min="0" max="10" step="1" value="5" />
+        <span id="ai-readiness-value" class="pill accent">5</span>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Existing skills</h3>
+        <div id="profile-skills"></div>
+        <div id="skill-suggestions" class="suggestion-chips"></div>
+        <div class="inline-form">
+          <input id="new-skill-name" placeholder="Skill name" />
+          <select id="new-skill-level">
+            <option>Awareness</option><option>Working knowledge</option><option>Independent</option><option>Advanced</option><option>Coach</option>
+          </select>
+          <button class="secondary" id="add-skill-btn">+ Add</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Learning goals</h3>
+        <div id="profile-goals"></div>
+        <div id="goal-suggestions" class="suggestion-chips"></div>
+        <div class="inline-form">
+          <input id="new-goal-name" placeholder="Skill to learn" />
+          <select id="new-goal-type"><option value="learn">Learn</option><option value="practise">Practise</option><option value="master">Master</option></select>
+          <button class="secondary" id="add-goal-btn">+ Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <label>Declared availability<input id="pref-availability" placeholder="e.g. 2 hours/week for 4 weeks" /></label>
+      <label class="checkbox-label"><input type="checkbox" id="pref-opted-in" /> Opted into opportunity discovery</label>
+      <button class="primary" id="save-prefs-btn">Save profile</button>
+      <p id="profile-save-msg" class="success"></p>
+    </div>
+  </section>
+
+  <!-- Workflow library -->
+  <section id="view-workflows" class="view hidden">
+    <div class="subtab-bar">
+      <button class="subtab-btn active" data-subtab="wf-library">📚 Workflow library</button>
+      <button class="subtab-btn" data-subtab="wf-similarity">🔎 Similarity &amp; reuse</button>
+    </div>
+
+    <div class="subtab-panel" id="panel-wf-library">
+      <div class="view-header-row">
+        <h2>Workflow library</h2>
+        <button class="primary" id="new-workflow-btn">+ New workflow</button>
+      </div>
+      <div id="workflow-list" class="wf-dept-list"></div>
+    </div>
+
+    <div class="subtab-panel hidden" id="panel-wf-similarity">
+      <h2>Similarity &amp; reuse</h2>
+      <p class="muted">AI scans every validated/published workflow's steps and flags ones that look similar to
+        each other — especially across departments — so teams can spot duplicated effort or reuse an existing
+        solution instead of building from scratch. All matches still require the workflow owners to confirm.</p>
+      <div class="card" id="similarity-scan-card">
+        <button class="primary" id="rescan-similarity-btn">🔍 Re-scan all workflows</button>
+        <span id="similarity-scan-summary" class="muted"></span>
+      </div>
+      <div id="similarity-auto-result"></div>
+      <details class="card" id="similarity-manual-card">
+        <summary>Advanced: compare two specific step IDs manually</summary>
+        <label>Stage A ID<input id="sim-stage-a" type="number" /></label>
+        <label>Stage B ID<input id="sim-stage-b" type="number" /></label>
+        <button class="secondary" id="compare-btn">Compare</button>
+        <div id="similarity-result"></div>
+      </details>
+    </div>
+  </section>
+
+  <!-- Workflow intake -->
+  <section id="view-workflow-intake" class="view hidden">
+    <button class="back-btn" data-back="workflows">&larr; Back to workflows</button>
+    <h2>Create a workflow</h2>
+    <div class="card">
+      <label>Workflow name<input id="wf-name" placeholder="e.g. Prepare weekly report" /></label>
+      <label>Business purpose<textarea id="wf-purpose" rows="2"></textarea></label>
+      <label>Intake method
+        <select id="wf-source-type">
+          <option value="pasted_text">Paste approved source text → AI draft</option>
+          <option value="manual">Manual entry (one stage per line)</option>
+        </select>
+      </label>
+      <label>Source text / stages (one per line)<textarea id="wf-source-text" rows="6" placeholder="Export records.&#10;Remove irrelevant fields.&#10;Create a summary."></textarea></label>
+      <button class="primary" id="create-workflow-btn">Create draft</button>
+      <p id="wf-create-msg" class="success"></p>
+    </div>
+  </section>
+
+  <!-- Workflow detail -->
+  <section id="view-workflow-detail" class="view hidden">
+    <button class="back-btn" data-back="workflows">&larr; Back to workflows</button>
+    <div class="view-header-row">
+      <div>
+        <h2 id="wfd-name" style="display:inline"></h2>
+        <button class="ghost-btn" id="wfd-edit-btn">✏️ Rewrite name/purpose</button>
+      </div>
+    </div>
+    <p id="wfd-purpose" class="muted"></p>
+    <div id="wfd-edit-form" class="card hidden">
+      <label>Name<input id="wfd-edit-name" /></label>
+      <label>Business purpose<textarea id="wfd-edit-purpose" rows="2"></textarea></label>
+      <button class="primary" id="wfd-edit-save-btn">Save</button>
+      <button class="secondary" id="wfd-edit-cancel-btn">Cancel</button>
+    </div>
+    <div class="status-row">
+      <span id="wfd-status" class="pill"></span>
+      <div id="wfd-transition-actions"></div>
+    </div>
+    <h3>Stages <span class="muted">(drag to reorder visually — sequence is illustrative)</span></h3>
+    <div id="wfd-canvas" class="canvas"></div>
+    <div class="card" id="wfd-add-stage-card">
+      <h3>+ Add a step</h3>
+      <label>Step name<input id="wfd-new-stage-name" placeholder="e.g. Reconcile exceptions" /></label>
+      <label>Description<textarea id="wfd-new-stage-desc" rows="2"></textarea></label>
+      <button class="primary" id="wfd-add-stage-btn">Add step</button>
+    </div>
+  </section>
+
+  <!-- Opportunity marketplace -->
+  <section id="view-opportunities" class="view hidden">
+    <div class="subtab-bar">
+      <button class="subtab-btn active" data-subtab="opp-marketplace">🛒 Marketplace</button>
+      <button class="subtab-btn" data-subtab="opp-backlog">📋 Backlog</button>
+    </div>
+
+    <div class="subtab-panel" id="panel-opp-marketplace">
+      <div class="view-header-row">
+        <h2>Opportunity marketplace</h2>
+        <button class="primary" id="new-opportunity-btn">✍️ Create a new opportunity draft</button>
+      </div>
+
+      <div class="lane-bar">
+        <button class="lane-btn" data-lane="learn">🎓 I want to learn</button>
+        <button class="lane-btn" data-lane="help">🙋 I want to help</button>
+        <button class="lane-btn" data-lane="teach">🧑‍🏫 I'm ready to teach</button>
+      </div>
+
+      <p class="muted lane-empty-hint" id="lane-empty-hint">👆 Choose one of the options above to get started.</p>
+
+      <div class="lane-panel hidden" id="lane-learn">
+        <p class="muted">Browse shadowing opportunities across the company. Click one, then request it — your Team Lead is looped in automatically.</p>
+        <div id="shadow-list" class="grid-3"></div>
+      </div>
+
+      <div class="lane-panel hidden" id="lane-help">
+        <p class="muted">Other departments' hot tasks and backlog. Grab one to help clear it — no IDs or forms needed.</p>
+        <div id="hot-tasks-list" class="grid-3"></div>
+      </div>
+
+      <div class="lane-panel hidden" id="lane-teach">
+        <p class="muted">Skills you already have that colleagues want to learn. One click offers to teach — your Team Lead approves before it goes live, same as any other opportunity.</p>
+        <div id="teach-matches-list"></div>
+      </div>
+    </div>
+
+    <div class="subtab-panel hidden" id="panel-opp-backlog">
+      <h2>Backlog dashboard</h2>
+      <div id="backlog-list"></div>
+    </div>
+  </section>
+
+  <!-- Opportunity intake -->
+  <section id="view-opportunity-intake" class="view hidden">
+    <button class="back-btn" data-back="opportunities">&larr; Back to opportunities</button>
+    <h2>✍️ Create a new opportunity draft</h2>
+    <p class="muted">Describe the task or skill-sharing opportunity in plain language — pick a workflow and step from the lists below, no IDs needed.</p>
+    <div class="card">
+      <label>Title<input id="opp-title" placeholder="e.g. Help clear the weekly exceptions backlog" /></label>
+      <label>Opportunity type
+        <select id="opp-type">
+          <option value="shadow_for_a_day">Shadow for a day</option>
+          <option value="bounded_backlog_assistance">Bounded backlog assistance</option>
+          <option value="ai_coaching">AI coaching</option>
+          <option value="automation_transfer">Automation transfer</option>
+          <option value="process_discovery">Process discovery</option>
+          <option value="short_cross_team_project">Short cross-team project</option>
+        </select>
+      </label>
+      <label>Related workflow <span class="muted">(optional)</span>
+        <select id="opp-workflow-select"><option value="">— Not tied to a specific workflow —</option></select>
+      </label>
+      <label>Related step <span class="muted">(optional)</span>
+        <select id="opp-stage-select" disabled><option value="">— Choose a workflow first —</option></select>
+      </label>
+      <label>Definition of done<textarea id="opp-dod" rows="2"></textarea></label>
+      <label>Sensitivity
+        <select id="opp-sensitivity"><option value="low">Low</option><option value="medium">Medium</option><option value="unknown">Unknown</option></select>
+      </label>
+      <label>Required authorization to take part
+        <select id="opp-required-auth">
+          <option value="none">None</option>
+          <option value="manager_sign_off">Manager sign-off</option>
+          <option value="restricted_system_access">Restricted system access</option>
+          <option value="confidential_data_clearance">Confidential data clearance</option>
+        </select>
+      </label>
+      <label>Visibility once approved
+        <select id="opp-share-scope">
+          <option value="company_wide">Company-wide — anyone can discover it</option>
+          <option value="department_only">Department only — not for sharing outside my department</option>
+        </select>
+      </label>
+      <button class="primary" id="create-opportunity-btn">✅ Save draft</button>
+      <p class="muted" style="margin-top:8px">Anyone can save a draft. Your Team Lead/manager is automatically assigned to review and publish it before it becomes visible for grabs.</p>
+      <p id="opp-create-msg" class="success"></p>
+    </div>
+  </section>
+
+  <!-- Opportunity detail -->
+  <section id="view-opportunity-detail" class="view hidden">
+    <button class="back-btn" data-back="opportunities">&larr; Back to opportunities</button>
+    <div class="card" id="opp-detail-card"></div>
+    <div class="card" id="opp-explanation-card"></div>
+    <div class="card" id="opp-team-lead-card"></div>
+    <div class="card" id="opp-actions-card"></div>
+  </section>
+
+  <!-- Guided workspace -->
+  <section id="view-workspace" class="view hidden">
+    <button class="back-btn" data-back="opportunities">&larr; Back to opportunities</button>
+    <h2>Guided workspace</h2>
+    <div id="workspace-content"></div>
+  </section>
+
+  <!-- Audit -->
+  <section id="view-audit" class="view hidden">
+    <h2>Audit trail</h2>
+    <div id="audit-list"></div>
+  </section>
+
+</main>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
