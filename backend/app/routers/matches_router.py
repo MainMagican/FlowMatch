@@ -43,6 +43,10 @@ def list_recommendations():
         opportunities = conn.execute("SELECT * FROM opportunities WHERE status = 'published'").fetchall()
         results = []
         for opp in opportunities:
+            if opp["owner_id"] == user["id"]:
+                # Never recommend someone their own opportunity - they're
+                # the one offering it, not a candidate to grab/shadow it.
+                continue
             eligible, reasons = check_eligibility(conn, opp, user)
             if not eligible:
                 # Recorded so the "blocked match" demo path is auditable, but
@@ -68,9 +72,22 @@ def list_recommendations():
                 "_sort_score": internal_sort_score(components),
             })
         results.sort(key=lambda r: r["_sort_score"], reverse=True)
+        # Guard against duplicate/near-duplicate opportunities (e.g. two
+        # published offers with the same owner + title) surfacing as
+        # separate recommendation cards - keep only the first (highest-
+        # scoring) one per (owner, title, opportunity_type) signature.
+        seen_signatures = set()
+        deduped = []
         for r in results:
+            opp = r["opportunity"]
+            signature = (opp["owner_id"], opp["title"].strip().lower(), opp["opportunity_type"])
+            if signature in seen_signatures:
+                continue
+            seen_signatures.add(signature)
+            deduped.append(r)
+        for r in deduped:
             del r["_sort_score"]
-        return jsonify(results)
+        return jsonify(deduped)
 
 
 @bp.get("/eligibility-check/<int:opportunity_id>")

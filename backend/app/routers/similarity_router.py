@@ -142,6 +142,8 @@ def auto_scan():
                         "department_name": stage_b["department_name"], "pod_name": stage_b["pod_name"],
                     },
                     "confidence": result["confidence"],
+                    "match_percentage": result["match_percentage"],
+                    "explanation": result["explanation"],
                     "cross_department": cross_department,
                     "shared_characteristics": result["shared_characteristics"],
                     "recommendation": result["recommendation"],

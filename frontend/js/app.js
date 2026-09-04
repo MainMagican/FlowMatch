@@ -31,7 +31,7 @@ function showView(name) {
   $$(".nav-btn").forEach((b) => b.classList.toggle("active", b.dataset.view === name));
 }
 
-async function goto(name, opts = {}) {
+async function goto(name, opts = {}, navOptions = {}) {
   showView(name);
   try {
     if (name === "dashboard") await renderDashboard();
@@ -47,7 +47,23 @@ async function goto(name, opts = {}) {
     console.error(err);
     alert(err.message || "Something went wrong.");
   }
+  // Keep the browser Back/Forward buttons inside the app instead of leaving
+  // it entirely (there's no server-side routing, so without this the
+  // browser has nowhere else to go but a raw API response or blank page).
+  if (!navOptions.skipHistory) {
+    history.pushState({ view: name, opts }, "", "#" + name);
+  }
 }
+
+window.addEventListener("popstate", (e) => {
+  if (!state.user) return;
+  const target = e.state || { view: "dashboard", opts: {} };
+  // If Back is pressed all the way to the pre-login history entry while
+  // still signed in, land on the dashboard instead of showing the bare
+  // login form underneath the nav bar.
+  if (target.view === "login") { goto("dashboard", {}, { skipHistory: true }); return; }
+  goto(target.view, target.opts || {}, { skipHistory: true });
+});
 
 /* Sub-tab bars within a view (e.g. Workflows: Library / Similarity,
    Opportunities: Marketplace / Backlog) - one tiny generic handler covers
@@ -186,12 +202,17 @@ async function refreshApprovalsBell() {
 function renderApprovalsBellList(drafts) {
   const el = $("#approvals-bell-list");
   el.innerHTML = drafts.length
-    ? drafts.map((o) => `
+    ? drafts.map((o) => {
+        const isInterest = o.approval_kind === "interest_approval";
+        const person = isInterest ? o.contributor : o.owner;
+        const verb = isInterest ? "wants to help with" : "drafted";
+        return `
         <div class="approvals-bell-item" data-opp-id="${o.id}">
-          <strong>${o.owner?.avatar_emoji || "👤"} ${esc(o.owner?.name || "Someone")}</strong> drafted
+          <strong>${person?.avatar_emoji || "👤"} ${esc(person?.name || "Someone")}</strong> ${verb}
           <div class="approvals-bell-item-title">${esc(o.title)}</div>
           <span class="pill">${esc(fmtLabel(o.opportunity_type))}</span>
-        </div>`).join("")
+        </div>`;
+      }).join("")
     : `<p class="muted">Nothing waiting on you right now.</p>`;
 }
 
@@ -725,14 +746,41 @@ async function renderWorkflows() {
 
 $("#new-workflow-btn").addEventListener("click", () => showView("workflow-intake"));
 
+state.wfAttachmentFilename = null;
+
+$("#wf-upload-input").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  const statusEl = $("#wf-upload-status");
+  state.wfAttachmentFilename = null;
+  if (!file) { statusEl.textContent = ""; return; }
+  statusEl.textContent = `Scanning ${file.name}…`;
+  try {
+    const result = await Api.extractWorkflowFile(file);
+    state.wfAttachmentFilename = result.filename;
+    if (result.is_image) {
+      statusEl.textContent = `📎 ${result.filename} attached for reference. ${result.note || ""}`;
+    } else if (result.source_text) {
+      $("#wf-source-text").value = result.source_text;
+      $("#wf-source-type").value = "pasted_text";
+      statusEl.textContent = `✅ Extracted ${result.stages_preview_count} step(s) from ${result.filename} — review below before creating the draft.`;
+    } else {
+      statusEl.textContent = `⚠ ${result.note || "No text could be extracted from " + result.filename + "."}`;
+    }
+  } catch (err) {
+    statusEl.textContent = "";
+    alert(err.message);
+  }
+});
+
 $("#create-workflow-btn").addEventListener("click", async () => {
   const sourceType = $("#wf-source-type").value;
   const text = $("#wf-source-text").value;
   const body = {
     name: $("#wf-name").value || "Untitled workflow",
     business_purpose: $("#wf-purpose").value,
-    source_type: sourceType,
+    source_type: (state.wfAttachmentFilename && sourceType === "pasted_text") ? "uploaded_file" : sourceType,
     source_text: text,
+    attachment_filename: state.wfAttachmentFilename || undefined,
   };
   if (sourceType === "manual") {
     body.stages = text.split("\n").map((l) => l.trim()).filter(Boolean).map((line, idx) => ({
@@ -742,6 +790,7 @@ $("#create-workflow-btn").addEventListener("click", async () => {
   try {
     const wf = await Api.createWorkflow(body);
     $("#wf-create-msg").textContent = "Workflow created!";
+    state.wfAttachmentFilename = null;
     setTimeout(() => goto("workflow-detail", { id: wf.id }), 600);
   } catch (err) {
     $("#wf-create-msg").textContent = "";
@@ -755,9 +804,14 @@ async function renderWorkflowDetail(id) {
   const wf = await Api.getWorkflow(id);
   $("#wfd-name").textContent = wf.name;
   $("#wfd-purpose").textContent = wf.business_purpose || "";
+  $("#wfd-attachment").textContent = wf.source_attachment_filename ? `📎 Source document: ${wf.source_attachment_filename}` : "";
   $("#wfd-status").textContent = fmtLabel(wf.validation_status);
   $("#wfd-status").className = `pill ${["validated", "published"].includes(wf.validation_status) ? "accent" : ""}`;
 
+  const canEditWorkflow = (state.user.roles || []).some((r) => ["team_lead", "workflow_owner", "administrator"].includes(r))
+    && (state.user.roles.includes("administrator") || wf.department_id === state.user.department_id || wf.owner_id === state.user.id);
+
+  $("#wfd-edit-btn").classList.toggle("hidden", !canEditWorkflow);
   $("#wfd-edit-form").classList.add("hidden");
   $("#wfd-edit-btn").onclick = () => {
     $("#wfd-edit-name").value = wf.name;
@@ -775,6 +829,7 @@ async function renderWorkflowDetail(id) {
     } catch (err) { alert(err.message); }
   };
 
+  $("#wfd-add-stage-card").classList.toggle("hidden", !canEditWorkflow);
   $("#wfd-add-stage-btn").onclick = async () => {
     const name = $("#wfd-new-stage-name").value.trim();
     if (!name) { alert("Give the new step a name."); return; }
@@ -814,11 +869,13 @@ async function renderWorkflowDetail(id) {
         ${s.backlog_status && s.backlog_status !== "no_current_need" ? `<span class="badge blocked">${esc(fmtLabel(s.backlog_status))}</span>` : ""}
       </div>
       <div class="stage-actions">
-        <button class="ghost-btn" data-edit-stage="${s.id}">✏️ Rewrite</button>
-        <button class="ghost-btn" data-set-backlog="${s.id}">📌 Signal backlog</button>
-        <button class="ghost-btn" data-delete-stage="${s.id}">🗑️ Remove</button>
+        ${canEditWorkflow ? `<button class="ghost-btn" data-edit-stage="${s.id}">✏️ Rewrite</button>` : ""}
+        ${canEditWorkflow ? `<button class="ghost-btn" data-set-backlog="${s.id}">📌 Signal backlog</button>` : ""}
+        ${canEditWorkflow ? `<button class="ghost-btn" data-delete-stage="${s.id}">🗑️ Remove</button>` : ""}
       </div>
     </div>`).join("");
+
+  renderWorkflowMap(wf.stages);
 
   // Drag-reorder (visual only — sequence is illustrative per design decision).
   $$(".stage-card", canvas).forEach((card) => {
@@ -837,7 +894,7 @@ async function renderWorkflowDetail(id) {
       canvas.removeChild(moved);
       canvas.insertBefore(moved, nodes[toIdx === nodes.length - 1 && toIdx > fromIdx ? null : (toIdx > fromIdx ? nodes[toIdx].nextSibling : nodes[toIdx])] || null);
     });
-    card.querySelector("[data-set-backlog]").addEventListener("click", async (e) => {
+    card.querySelector("[data-set-backlog]")?.addEventListener("click", async (e) => {
       e.stopPropagation();
       const options = ["no_current_need", "monitoring", "assistance_requested", "critical_internal_need"];
       const choice = prompt("Set backlog signal:\n" + options.join(", "), "assistance_requested");
@@ -847,7 +904,7 @@ async function renderWorkflowDetail(id) {
         renderWorkflowDetail(wf.id);
       } catch (err) { alert(err.message); }
     });
-    card.querySelector("[data-edit-stage]").addEventListener("click", async (e) => {
+    card.querySelector("[data-edit-stage]")?.addEventListener("click", async (e) => {
       e.stopPropagation();
       const stage = wf.stages.find((s) => String(s.id) === card.dataset.id);
       const newName = prompt("Step name:", stage?.name || "");
@@ -859,7 +916,7 @@ async function renderWorkflowDetail(id) {
         renderWorkflowDetail(wf.id);
       } catch (err) { alert(err.message); }
     });
-    card.querySelector("[data-delete-stage]").addEventListener("click", async (e) => {
+    card.querySelector("[data-delete-stage]")?.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!confirm("Remove this step from the workflow?")) return;
       try {
@@ -867,6 +924,37 @@ async function renderWorkflowDetail(id) {
         renderWorkflowDetail(wf.id);
       } catch (err) { alert(err.message); }
     });
+  });
+}
+
+/* Compact connected-node "workflow map" shown alongside the stage list.
+   Hovering a node (or its matching stage card) highlights both, so a
+   complex multi-step workflow can still be traced visually at a glance. */
+function renderWorkflowMap(stages) {
+  const mapEl = $("#wfd-map");
+  if (!stages.length) {
+    mapEl.innerHTML = `<p class="muted">No steps yet — add one to see the map.</p>`;
+    return;
+  }
+  mapEl.innerHTML = stages.map((s, i) => `
+    <div class="wfd-map-node" data-id="${s.id}">
+      <div class="wfd-map-dot">${i + 1}</div>
+      <div class="wfd-map-label" title="${esc(s.description || s.activities || "")}">${esc(s.name)}</div>
+    </div>
+    ${i < stages.length - 1 ? '<div class="wfd-map-connector"></div>' : ""}`).join("");
+
+  const canvas = $("#wfd-canvas");
+  const highlight = (id, on) => {
+    $$(`.wfd-map-node[data-id="${id}"]`, mapEl).forEach((n) => n.classList.toggle("wfd-map-node-active", on));
+    $$(`.stage-card[data-id="${id}"]`, canvas).forEach((c) => c.classList.toggle("stage-card-active", on));
+  };
+  $$(".wfd-map-node", mapEl).forEach((node) => {
+    node.addEventListener("mouseenter", () => highlight(node.dataset.id, true));
+    node.addEventListener("mouseleave", () => highlight(node.dataset.id, false));
+  });
+  $$(".stage-card", canvas).forEach((card) => {
+    card.addEventListener("mouseenter", () => highlight(card.dataset.id, true));
+    card.addEventListener("mouseleave", () => highlight(card.dataset.id, false));
   });
 }
 
@@ -978,12 +1066,10 @@ function backlogCard(s) {
   const urgent = s.backlog_status === "critical_internal_need";
   return `
     <div class="card">
-      <div style="cursor:pointer" onclick="goto('workflow-detail', {id: ${s.workflow_id}})">
-        <h3>${esc(s.name)} <span class="badge ${urgent ? "blocked" : "human"}">${esc(fmtLabel(s.backlog_status))}</span></h3>
-        <p class="muted">From workflow: ${esc(s.workflow_name)}</p>
-        <span class="pill">📋 Backlog signal — no opportunity drafted yet</span>
-      </div>
-      <button class="secondary" style="margin-top:10px" data-offer-help="${s.id}" data-workflow-id="${s.workflow_id}" data-stage-name="${esc(s.name)}">🙋 I'll help with this</button>
+      <h3>${esc(s.name)} <span class="badge ${urgent ? "blocked" : "human"}">${esc(fmtLabel(s.backlog_status))}</span></h3>
+      <p class="muted" style="cursor:pointer" onclick="goto('workflow-detail', {id: ${s.workflow_id}})">From workflow: ${esc(s.workflow_name)} <span class="muted">(view workflow)</span></p>
+      <span class="pill">📋 Backlog signal — no opportunity drafted yet</span>
+      <button class="primary" style="margin-top:10px;display:block;width:100%" data-offer-help="${s.id}" data-workflow-id="${s.workflow_id}" data-stage-name="${esc(s.name)}">🙋 I'll help with this — send request</button>
     </div>`;
 }
 
@@ -1110,12 +1196,16 @@ async function renderOpportunityDetail(id) {
 
   const explEl = $("#opp-explanation-card");
   explEl.innerHTML = "";
-  try {
-    const check = await Api.eligibilityCheck(opp.id);
-    explEl.innerHTML = `
-      <h3>Eligibility ${check.eligible ? '<span class="badge editable">Eligible</span>' : '<span class="badge blocked">Not eligible</span>'}</h3>
-      ${check.reasons.length ? `<ul>${check.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : `<p class="muted">No blockers found.</p>`}`;
-  } catch (e) { /* non-fatal */ }
+  if (opp.status === "published") {
+    try {
+      const check = await Api.eligibilityCheck(opp.id);
+      explEl.innerHTML = `
+        <h3>Eligibility ${check.eligible ? '<span class="badge editable">Eligible</span>' : '<span class="badge blocked">Not eligible</span>'}</h3>
+        ${check.reasons.length ? `<ul>${check.reasons.map((r) => `<li>${esc(r)}</li>`).join("")}</ul>` : `<p class="muted">No blockers found.</p>`}`;
+    } catch (e) { /* non-fatal */ }
+  } else if (opp.status === "pending_mutual_acceptance" || opp.status === "active") {
+    explEl.innerHTML = `<h3>Status</h3><p class="muted">${opp.status === "active" ? "This opportunity is active — mutual acceptance is complete." : "Someone has already expressed interest — this is now waiting on the opportunity owner's approval, not on eligibility."}</p>`;
+  }
 
   const tlCard = $("#opp-team-lead-card");
   tlCard.innerHTML = "";
@@ -1180,7 +1270,11 @@ async function renderOpportunityDetail(id) {
     html += `<button class="primary" id="express-interest-btn">Express interest</button>`;
   }
   if (opp.status === "pending_mutual_acceptance") {
-    html += `<button class="primary" id="approve-btn">Approve (owner)</button>`;
+    if (opp.owner_id === state.user.id) {
+      html += `<button class="primary" id="approve-btn">Approve (owner)</button>`;
+    } else {
+      html += `<p class="muted">⏳ Pending approval from the opportunity owner${opp.owner ? `, ${opp.owner.avatar_emoji || "👤"} <strong>${esc(opp.owner.name)}</strong>` : ""}. No action needed from you right now.</p>`;
+    }
   }
   if (opp.status === "active") {
     html += `<button class="primary" onclick="goto('workspace', {opportunityId: ${opp.id}})">Open guided workspace</button>`;
@@ -1241,7 +1335,7 @@ async function runSimilarityScan() {
     resultEl.innerHTML = data.matches.map((m) => `
       <div class="card sim-match-card ${m.cross_department ? "sim-cross-dept" : ""}">
         <div class="sim-match-header">
-          <span class="badge ai">${esc(CONFIDENCE_LABEL[m.confidence] || m.confidence)}</span>
+          <span class="badge ai">${esc(CONFIDENCE_LABEL[m.confidence] || m.confidence)} · ${m.match_percentage}% match</span>
           ${m.cross_department ? '<span class="badge human">Cross-department</span>' : '<span class="badge">Same department</span>'}
         </div>
         <div class="sim-match-sides">
@@ -1258,6 +1352,7 @@ async function runSimilarityScan() {
           </div>
         </div>
         <p><strong>Shared:</strong> ${esc((m.shared_characteristics || []).join(", ") || "none found")}</p>
+        <p class="sim-match-explanation">🤖 ${esc(m.explanation || "")}</p>
         <p class="muted">${esc(m.recommendation)}</p>
       </div>`).join("");
     $$("[data-open-workflow]", resultEl).forEach((el) => el.addEventListener("click", () => {
@@ -1277,8 +1372,9 @@ $("#compare-btn").addEventListener("click", async () => {
     const result = await Api.compareStages(a, b);
     $("#similarity-result").innerHTML = `
       <div class="card">
-        <h3>Comparison <span class="badge ai">AI-assisted, confidence: ${esc(result.confidence)}</span></h3>
+        <h3>Comparison <span class="badge ai">AI-assisted, ${result.match_percentage}% match · confidence: ${esc(result.confidence)}</span></h3>
         <p><strong>Shared:</strong> ${esc((result.shared_characteristics || []).join(", ") || "none found")}</p>
+        <p class="sim-match-explanation">🤖 ${esc(result.explanation || "")}</p>
         <p><strong>Differences:</strong> ${esc((result.differences || []).join(", ") || "none found")}</p>
         <p><strong>Recommendation:</strong> ${esc(result.recommendation)}</p>
         <p class="badge human">Requires owner confirmation</p>
@@ -1363,6 +1459,7 @@ async function renderAudit() {
 /* ---------------- Init ---------------- */
 
 (function init() {
+  history.replaceState({ view: "login", opts: {} }, "", "#login");
   const token = Api.token();
   const user = Api.getUser();
   if (token && user) {

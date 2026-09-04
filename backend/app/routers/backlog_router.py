@@ -27,6 +27,14 @@ def set_backlog_signal(stage_id):
         stage = conn.execute("SELECT * FROM workflow_stages WHERE id = ?", (stage_id,)).fetchone()
         if not stage:
             raise ApiError("Stage not found", 404)
+        workflow = conn.execute("SELECT * FROM workflows WHERE id = ?", (stage["workflow_id"],)).fetchone()
+        # Backlog signals are an operational statement about your own team's
+        # capacity - only people in the workflow's own department (or its
+        # owner) may declare one, even if the workflow is visible org-wide.
+        is_own_department = workflow and user["department_id"] and workflow["department_id"] == user["department_id"]
+        is_owner = workflow and workflow["owner_id"] == user["id"]
+        if "administrator" not in user["roles"] and not is_own_department and not is_owner:
+            raise ApiError("You can only signal backlog need for your own department's workflows.", 403)
         conn.execute("UPDATE workflow_stages SET backlog_status = ? WHERE id = ?", (status, stage_id))
         audit_event(conn, user, "backlog.signal_set", "workflow_stage", stage_id)
         refreshed = conn.execute("SELECT * FROM workflow_stages WHERE id = ?", (stage_id,)).fetchone()

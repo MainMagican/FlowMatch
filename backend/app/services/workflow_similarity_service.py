@@ -38,9 +38,30 @@ class WorkflowSimilarityService:
             "shared_characteristics": sorted(shared) + ["shared systems: " + ", ".join(sorted(shared_systems))] if shared_systems else sorted(shared),
             "differences": sorted(differences),
             "confidence": confidence,
+            "match_percentage": round(overlap_ratio * 100),
+            "explanation": self._explain(shared, shared_systems, overlap_ratio),
             "requires_owner_confirmation": True,
             "recommendation": (
                 "Both workflow owners should review this similarity and confirm whether the "
                 "processes are genuinely comparable before any reuse is considered."
             ),
         }
+
+    def _explain(self, shared, shared_systems, overlap_ratio):
+        """One-sentence, deterministic summary of why the similarity score
+        came out the way it did - not an LLM call (docs/DECISIONS.md #4),
+        just a plain-language readout of the same keyword/system overlap
+        used to compute match_percentage."""
+        if shared_systems and shared:
+            top_terms = ", ".join(sorted(shared)[:3])
+            return "Matched because both stages mention similar activities ({}) and use the same system(s) ({}).".format(
+                top_terms, ", ".join(sorted(shared_systems))
+            )
+        if shared_systems:
+            return "Matched mainly because both stages use the same system(s) ({}), though the described activities differ.".format(
+                ", ".join(sorted(shared_systems))
+            )
+        if shared:
+            top_terms = ", ".join(sorted(shared)[:3])
+            return "Matched because both stages describe similar activities ({}).".format(top_terms)
+        return "Little overlap found - the described activities and systems don't have much in common."

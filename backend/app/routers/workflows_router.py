@@ -8,10 +8,13 @@ from app.database import db_session
 from app.errors import ApiError
 from app.services.audit_service import audit_event
 from app.services.workflow_extraction_service import WorkflowExtractionService
+from app.services.file_intake_service import extract_text_from_upload, UnsupportedFileError
 
 bp = Blueprint("workflows", __name__, url_prefix="/api/workflows")
 
 extraction_service = WorkflowExtractionService()
+
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10MB - generous for a demo intake form
 
 VALIDATION_STATES = [
     "draft",
@@ -36,6 +39,16 @@ TRANSITIONS = {
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _require_workflow_authority(user, workflow):
+    """Only an administrator, the workflow's own department members, or the
+    workflow's owner may rename/edit/add/remove its content - viewing and
+    learning from another department's workflow is fine, editing it is not."""
+    is_own_department = workflow["department_id"] and workflow["department_id"] == user["department_id"]
+    is_owner = workflow["owner_id"] == user["id"]
+    if "administrator" not in user["roles"] and not is_own_department and not is_owner:
+        raise ApiError("You can only edit workflows that belong to your own department.", 403)
 
 
 def _serialize_workflow(conn, workflow):
@@ -97,6 +110,7 @@ def edit_workflow(workflow_id):
         workflow = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,)).fetchone()
         if not workflow:
             raise ApiError("Workflow not found", 404)
+        _require_workflow_authority(user, workflow)
         set_clause = ", ".join("{} = ?".format(k) for k in updates)
         conn.execute(
             "UPDATE workflows SET {} WHERE id = ?".format(set_clause),
@@ -107,25 +121,64 @@ def edit_workflow(workflow_id):
         return jsonify(_serialize_workflow(conn, refreshed))
 
 
+@bp.post("/extract-upload")
+def extract_upload():
+    """Upload a PDF/text file (or an image, as a reference-only attachment)
+    and get back a text preview + draft stage count, so the workflow intake
+    form can be pre-filled instead of the user typing/pasting every step by
+    hand. No external AI/OCR is used (docs/DECISIONS.md #4) - PDFs/text files
+    are parsed locally and deterministically; images are never auto-read into
+    steps, only accepted as an attachment for a human reviewer."""
+    get_current_user()
+    if "file" not in request.files:
+        raise ApiError("No file uploaded (expected form field 'file')", 400)
+    upload = request.files["file"]
+    if not upload.filename:
+        raise ApiError("No file selected", 400)
+    file_bytes = upload.read()
+    if len(file_bytes) > MAX_UPLOAD_BYTES:
+        raise ApiError("File is too large (max 10MB)", 400)
+    try:
+        result = extract_text_from_upload(upload.filename, file_bytes)
+    except UnsupportedFileError as e:
+        raise ApiError(str(e), 400)
+
+    stages_preview = (
+        extraction_service.extract_stages(result["source_text"])
+        if result["source_text"] else []
+    )
+    return jsonify({
+        "filename": upload.filename,
+        "source_text": result["source_text"],
+        "is_image": result["is_image"],
+        "note": result["note"],
+        "stages_preview_count": len(stages_preview),
+    })
+
+
 @bp.post("")
 def create_workflow():
-    """Create a workflow via one of three intake paths (design.md FR7):
+    """Create a workflow via one of these intake paths (design.md FR7):
     - source_type="manual": stages array supplied directly
     - source_type="pasted_text": source_text is run through the deterministic
       WorkflowExtractionService to produce an AI-generated draft
+    - source_type="uploaded_file": same as pasted_text, but source_text came
+      from a PDF/text file upload (see POST /extract-upload); attachment_filename
+      is recorded for traceability, and is required-ish for images (no text)
     """
     user = get_current_user()
     require_role(user, "team_lead", "workflow_owner")
     body = request.get_json(force=True) or {}
     source_type = body.get("source_type")
-    if source_type not in ("manual", "pasted_text"):
-        raise ApiError("source_type must be 'manual' or 'pasted_text'", 400)
+    if source_type not in ("manual", "pasted_text", "uploaded_file"):
+        raise ApiError("source_type must be 'manual', 'pasted_text', or 'uploaded_file'", 400)
 
     with db_session() as conn:
         cur = conn.execute(
             """INSERT INTO workflows (name, description, department_id, pod_id, business_purpose,
-                   owner_id, reviewer_id, source_type, source_text, validation_status, sensitivity, created_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   owner_id, reviewer_id, source_type, source_text, source_attachment_filename,
+                   validation_status, sensitivity, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 body.get("name", "Untitled workflow"),
                 body.get("description"),
@@ -136,14 +189,15 @@ def create_workflow():
                 body.get("reviewer_id"),
                 source_type,
                 body.get("source_text"),
-                "ai_generated_draft" if source_type == "pasted_text" else "draft",
+                body.get("attachment_filename"),
+                "ai_generated_draft" if source_type in ("pasted_text", "uploaded_file") else "draft",
                 body.get("sensitivity", "unknown"),
                 _now(),
             ),
         )
         workflow_id = cur.lastrowid
 
-        if source_type == "pasted_text":
+        if source_type in ("pasted_text", "uploaded_file"):
             stages = extraction_service.extract_stages(body.get("source_text", ""))
         else:
             stages = body.get("stages", [])
@@ -195,6 +249,8 @@ def edit_stage(workflow_id, stage_id):
         stage = conn.execute("SELECT * FROM workflow_stages WHERE id = ? AND workflow_id = ?", (stage_id, workflow_id)).fetchone()
         if not stage:
             raise ApiError("Stage not found", 404)
+        workflow = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,)).fetchone()
+        _require_workflow_authority(user, workflow)
         set_clause = ", ".join("{} = ?".format(k) for k in updates)
         conn.execute(
             "UPDATE workflow_stages SET {} WHERE id = ?".format(set_clause),
@@ -226,6 +282,7 @@ def add_stage(workflow_id):
         workflow = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,)).fetchone()
         if not workflow:
             raise ApiError("Workflow not found", 404)
+        _require_workflow_authority(user, workflow)
         max_seq = conn.execute(
             "SELECT COALESCE(MAX(sequence), 0) as m FROM workflow_stages WHERE workflow_id = ?", (workflow_id,)
         ).fetchone()["m"]
@@ -259,6 +316,8 @@ def delete_stage(workflow_id, stage_id):
         ).fetchone()
         if not stage:
             raise ApiError("Stage not found", 404)
+        workflow = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,)).fetchone()
+        _require_workflow_authority(user, workflow)
         conn.execute("DELETE FROM workflow_stages WHERE id = ?", (stage_id,))
         audit_event(conn, user, "workflow.stage_removed", "workflow", workflow_id)
         return jsonify({"deleted": True, "id": stage_id})

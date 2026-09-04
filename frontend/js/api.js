@@ -50,6 +50,24 @@ const Api = {
   put(path, body) { return this._request("PUT", path, body); },
   del(path) { return this._request("DELETE", path); },
 
+  async upload(path, file) {
+    const headers = {};
+    const token = this.token();
+    if (token) headers["Authorization"] = "Bearer " + token;
+    const form = new FormData();
+    form.append("file", file);
+    const resp = await fetch(API_BASE + path, { method: "POST", headers, body: form });
+    let data = null;
+    try { data = await resp.json(); } catch (e) { data = null; }
+    if (!resp.ok) {
+      const err = new Error((data && data.error) || "Upload failed");
+      err.reasons = data && data.reasons;
+      err.status = resp.status;
+      throw err;
+    }
+    return data;
+  },
+
   // Auth
   demoUsers() { return this.get("/auth/demo-users"); },
   login(userId, role) { return this.post("/auth/login", { user_id: userId, role }); },
@@ -73,6 +91,7 @@ const Api = {
   listWorkflows() { return this.get("/workflows"); },
   getWorkflow(id) { return this.get(`/workflows/${id}`); },
   createWorkflow(body) { return this.post("/workflows", body); },
+  extractWorkflowFile(file) { return this.upload("/workflows/extract-upload", file); },
   editWorkflow(id, body) { return this.put(`/workflows/${id}`, body); },
   editStage(workflowId, stageId, body) { return this.put(`/workflows/${workflowId}/stages/${stageId}`, body); },
   addStage(workflowId, body) { return this.post(`/workflows/${workflowId}/stages`, body); },

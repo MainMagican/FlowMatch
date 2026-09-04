@@ -19,8 +19,8 @@
     <span class="brand-name">FlowMatch</span>
   </div>
   <nav id="main-nav" class="hidden">
-    <button data-view="dashboard" class="nav-btn active">Dashboard</button>
     <button data-view="profile" class="nav-btn">Profile</button>
+    <button data-view="dashboard" class="nav-btn active">Dashboard</button>
     <button data-view="opportunities" class="nav-btn">Opportunities</button>
     <button data-view="workflows" class="nav-btn">Workflows</button>
     <button data-view="org" class="nav-btn">Org</button>
@@ -247,6 +247,13 @@
           <option value="manual">Manual entry (one stage per line)</option>
         </select>
       </label>
+      <div class="wf-upload-box">
+        <label>📎 Or upload an existing document (.pdf, .txt) to auto-draft the steps
+          <input type="file" id="wf-upload-input" accept=".pdf,.txt,.md,.jpg,.jpeg,.png,.gif,.bmp" />
+        </label>
+        <p class="muted" style="margin:4px 0 0">PDF/text files are scanned for steps automatically. Images (.jpg/.png) can't be auto-read here (no OCR available) — they're attached for reference only, and you'll still add the steps manually.</p>
+        <p id="wf-upload-status" class="muted"></p>
+      </div>
       <label>Source text / stages (one per line)<textarea id="wf-source-text" rows="6" placeholder="Export records.&#10;Remove irrelevant fields.&#10;Create a summary."></textarea></label>
       <button class="primary" id="create-workflow-btn">Create draft</button>
       <p id="wf-create-msg" class="success"></p>
@@ -263,6 +270,7 @@
       </div>
     </div>
     <p id="wfd-purpose" class="muted"></p>
+    <p id="wfd-attachment" class="muted"></p>
     <div id="wfd-edit-form" class="card hidden">
       <label>Name<input id="wfd-edit-name" /></label>
       <label>Business purpose<textarea id="wfd-edit-purpose" rows="2"></textarea></label>
@@ -273,13 +281,22 @@
       <span id="wfd-status" class="pill"></span>
       <div id="wfd-transition-actions"></div>
     </div>
-    <h3>Stages <span class="muted">(drag to reorder visually — sequence is illustrative)</span></h3>
-    <div id="wfd-canvas" class="canvas"></div>
-    <div class="card" id="wfd-add-stage-card">
-      <h3>+ Add a step</h3>
-      <label>Step name<input id="wfd-new-stage-name" placeholder="e.g. Reconcile exceptions" /></label>
-      <label>Description<textarea id="wfd-new-stage-desc" rows="2"></textarea></label>
-      <button class="primary" id="wfd-add-stage-btn">Add step</button>
+    <div class="wfd-body-grid">
+      <div class="wfd-main">
+        <h3>Stages <span class="muted">(drag to reorder visually — sequence is illustrative)</span></h3>
+        <div id="wfd-canvas" class="canvas"></div>
+        <div class="card" id="wfd-add-stage-card">
+          <h3>+ Add a step</h3>
+          <label>Step name<input id="wfd-new-stage-name" placeholder="e.g. Reconcile exceptions" /></label>
+          <label>Description<textarea id="wfd-new-stage-desc" rows="2"></textarea></label>
+          <button class="primary" id="wfd-add-stage-btn">Add step</button>
+        </div>
+      </div>
+      <aside class="wfd-map-panel">
+        <h3 class="wfd-map-title">🗺️ Workflow map</h3>
+        <p class="muted wfd-map-hint">Hover a step (either side) to trace it through the flow.</p>
+        <div id="wfd-map" class="wfd-map"></div>
+      </aside>
     </div>
   </section>
 

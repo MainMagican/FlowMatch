@@ -92,8 +92,9 @@ CREATE TABLE IF NOT EXISTS workflows (
     business_purpose TEXT,
     owner_id INTEGER REFERENCES users(id),
     reviewer_id INTEGER REFERENCES users(id),
-    source_type TEXT NOT NULL,  -- pasted_text / manual / ai_draft
+    source_type TEXT NOT NULL,  -- pasted_text / manual / ai_draft / uploaded_file
     source_text TEXT,
+    source_attachment_filename TEXT,  -- original filename of an uploaded PDF/image, if any
     validation_status TEXT NOT NULL DEFAULT 'draft',
     -- draft / ai_generated_draft / needs_owner_review / validated / published / archived
     sensitivity TEXT DEFAULT 'unknown',
@@ -288,6 +289,13 @@ def init_db():
     try:
         conn.executescript(SCHEMA)
         conn.commit()
+        # Best-effort migration for DBs created before this column existed -
+        # CREATE TABLE IF NOT EXISTS above won't retroactively add it.
+        try:
+            conn.execute("ALTER TABLE workflows ADD COLUMN source_attachment_filename TEXT")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass  # column already exists
     finally:
         conn.close()
 

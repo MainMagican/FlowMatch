@@ -216,9 +216,15 @@ def list_opportunities():
 
 @bp.get("/pending-my-approval")
 def pending_my_approval():
-    """Drafts/awaiting-approval opportunities where the current user is the
-    approver (named reviewer, or the drafter's resolved manager) - the
-    manager-facing queue for the 'anyone can draft, TL approves' flow."""
+    """Everything currently waiting on the current user to approve:
+    1) Drafts/awaiting-approval opportunities where they're the approver
+       (named reviewer, or the drafter's resolved manager).
+    2) Opportunities they own that are pending_mutual_acceptance - i.e.
+       someone expressed interest and is waiting on the owner (not the
+       reviewer/manager) to accept them.
+    Both surface in the same notification bell since both are 'something
+    needs your approval' moments, even though different roles/relationships
+    grant them."""
     user = get_current_user()
     with db_session() as conn:
         rows = conn.execute(
@@ -232,6 +238,27 @@ def pending_my_approval():
             ).fetchone()
             entry = _serialize(r)
             entry["owner"] = owner
+            entry["approval_kind"] = "draft_review"
+            result.append(entry)
+
+        interest_rows = conn.execute(
+            "SELECT * FROM opportunities WHERE status = 'pending_mutual_acceptance' AND owner_id = ? ORDER BY id",
+            (user["id"],),
+        ).fetchall()
+        for r in interest_rows:
+            eoi = conn.execute(
+                "SELECT * FROM expressions_of_interest WHERE opportunity_id = ? AND status = 'accepted_by_contributor' ORDER BY id DESC LIMIT 1",
+                (r["id"],),
+            ).fetchone()
+            contributor = (
+                conn.execute(
+                    "SELECT id, name, avatar_emoji, role_title FROM users WHERE id = ?", (eoi["user_id"],)
+                ).fetchone()
+                if eoi else None
+            )
+            entry = _serialize(r)
+            entry["contributor"] = contributor
+            entry["approval_kind"] = "interest_approval"
             result.append(entry)
         return jsonify(result)
 
@@ -278,6 +305,12 @@ def get_opportunity(opportunity_id):
                 "SELECT id, name, avatar_emoji, role_title FROM users WHERE id = ?", (approver_id,)
             ).fetchone()
             if approver_id else None
+        )
+        opp["owner"] = (
+            conn.execute(
+                "SELECT id, name, avatar_emoji, role_title FROM users WHERE id = ?", (row["owner_id"],)
+            ).fetchone()
+            if row["owner_id"] else None
         )
         opp["can_current_user_publish"] = _can_publish(conn, user, row)
         return jsonify(opp)
