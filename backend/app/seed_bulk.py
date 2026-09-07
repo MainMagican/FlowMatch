@@ -64,9 +64,8 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
     def unique_name_email(person_name=None):
         if person_name:
             email = person_name.lower().replace(" ", ".") + "@flowmatch.demo"
-            if email not in used_emails:
-                used_emails.add(email)
-                return person_name, email
+            used_emails.add(email)
+            return person_name, email
         while True:
             name = f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}"
             email = name.lower().replace(" ", ".") + "@flowmatch.demo"
@@ -78,6 +77,17 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
 
     def make_user(dept_id, pod_id, role_title, roles, manager_id=None, skills=None, goals=None,
                   ai_band=None, opted_in=True, person_name=None):
+        if person_name:
+            existing_user = conn.execute(
+                "SELECT id FROM users WHERE name = ?", (person_name,)
+            ).fetchone()
+            if existing_user:
+                for role in roles:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO user_roles (user_id, role) VALUES (?, ?)",
+                        (existing_user["id"], role),
+                    )
+                return existing_user["id"]
         name, email = unique_name_email(person_name)
         user_id = conn.execute(
             """INSERT INTO users (name, email, department_id, pod_id, manager_id, role_title,
@@ -122,11 +132,8 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
     ceo_id = make_user(dept_exec, pod_exec, "Chief Executive Officer", ["administrator"], manager_id=None,
                         ai_band="Enabler", person_name="Laust Bertelsen")
     conn.execute("UPDATE pods SET lead_user_id = ? WHERE id = ?", (ceo_id, pod_exec))
-    for _ in range(3):
-        make_user(dept_exec, pod_exec, rng.choice(["Chief of Staff", "Executive Assistant", "VP Strategy"]),
-                  ["contributor"], manager_id=ceo_id)
 
-    # Wire the original 7 demo personas into the same company tree.
+    # Wire the named internal profiles into the organization tree.
     conn.execute("UPDATE users SET manager_id = ? WHERE id = ?", (ceo_id, original_users["priya"]))
     conn.execute("UPDATE users SET manager_id = ? WHERE id = ?", (original_users["priya"], original_users["jordan"]))
     conn.execute("UPDATE users SET manager_id = ? WHERE id = ?", (ceo_id, original_users["dana"]))
@@ -266,20 +273,24 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
             conn.execute("UPDATE pods SET lead_user_id = ? WHERE id = ?", (lead_id, pod_id))
             pod_leads[pod_name] = lead_id
 
-            # First member of every pod also gets "reviewer" so each area has someone
-            # who can review submissions/opportunities.
-            for i in range(size - 1):
-                roles = ["contributor"]
-                if i == 0:
-                    roles.append("reviewer")
-                elif rng.random() < 0.05:
-                    roles.append("mentor")
-                make_user(
-                    dept_id, pod_id, f"{pod_name} Specialist", roles, manager_id=lead_id,
-                    skills=rng.sample(FINTECH_SKILLS, k=rng.randint(1, 3)),
-                    goals=rng.sample(FINTECH_SKILLS, k=rng.randint(0, 2)),
-                )
         dept_heads[dept_name] = dept_head_id
+
+    # Place the named internal profiles in their chart-defined teams.
+    conn.execute(
+        "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id = ?",
+        (dept_ids["Client Technology"], pod_ids["Commercial Analytics & Tools"],
+         pod_leads["Commercial Analytics & Tools"], original_users["priya"]),
+    )
+    conn.execute(
+        "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id IN (?, ?)",
+        (dept_ids["Business AML"], pod_ids["Transaction Monitoring & Investigations"],
+         pod_leads["Transaction Monitoring & Investigations"],
+         original_users["jordan"], original_users["riley"]),
+    )
+    conn.execute(
+        "UPDATE users SET manager_id = ? WHERE id = ?",
+        (dept_heads["Global Core Operations"], original_users["dana"]),
+    )
 
     # ================= Synthetic cross-department workflows =================
     # Each entry: (name, business_purpose, dept_name, pod_name, owner_id, reviewer_id,
