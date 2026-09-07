@@ -237,7 +237,10 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
     dept_heads = {}  # dept_name -> user_id
 
     for dept_name, dept_desc, (head_name, head_title), pods_spec in blueprint:
-        dept_id = conn.execute(
+        existing_department = conn.execute(
+            "SELECT id FROM departments WHERE name = ?", (dept_name,)
+        ).fetchone()
+        dept_id = existing_department["id"] if existing_department else conn.execute(
             "INSERT INTO departments (name, description) VALUES (?, ?)", (dept_name, dept_desc)
         ).lastrowid
         dept_ids[dept_name] = dept_id

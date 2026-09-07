@@ -43,28 +43,28 @@ def seed():
 
         dept_customer_ops = conn.execute(
             "INSERT INTO departments (name, description) VALUES (?, ?)",
-            ("Customer Operations", "Handles customer-facing operational processes."),
+            ("Business AML", "Client due diligence, financial-crime operations, and investigations."),
         ).lastrowid
         dept_biz_improvement = conn.execute(
             "INSERT INTO departments (name, description) VALUES (?, ?)",
-            ("Business Improvement", "Drives process improvement and automation adoption."),
+            ("Global Core Operations", "Global client operations, payment operations, and process automation."),
         ).lastrowid
         dept_shared = conn.execute(
             "INSERT INTO departments (name, description) VALUES (?, ?)",
-            ("Shared Services", "Cross-functional support roles."),
+            ("Data, Analytics & AI", "Enterprise data engineering, data science, and information management."),
         ).lastrowid
 
         pod_exception_reporting = conn.execute(
             "INSERT INTO pods (name, department_id, description) VALUES (?, ?, ?)",
-            ("Exception Reporting", dept_customer_ops, "Prepares weekly operational exception reports."),
+            ("Transaction Monitoring & Investigations", dept_customer_ops, "Transaction monitoring and financial-crime investigations."),
         ).lastrowid
         pod_automation_enablement = conn.execute(
             "INSERT INTO pods (name, department_id, description) VALUES (?, ?, ?)",
-            ("Automation Enablement", dept_biz_improvement, "Builds and coaches reusable automations."),
+            ("Payment Process Automation", dept_biz_improvement, "Builds and coaches reusable payment-process automations."),
         ).lastrowid
         pod_general_support = conn.execute(
             "INSERT INTO pods (name, department_id, description) VALUES (?, ?, ?)",
-            ("General Support", dept_shared, "Cross-department contributors and reviewers."),
+            ("Commercial Analytics & Tools", dept_shared, "Commercial reporting, analytics, and technology enablement."),
         ).lastrowid
 
         def create_user(name, email, dept_id, pod_id, role_title, avatar, roles,
@@ -83,37 +83,37 @@ def seed():
             return user_id
 
         priya = create_user(
-            "Priya Sharma", "priya.sharma@flowmatch.demo", dept_customer_ops, pod_exception_reporting,
-            "Team Lead, Customer Operations", "🧭", ["team_lead"],
+            "Ainars Djatlevskis", "ainars.djatlevskis@flowmatch.demo", dept_shared, pod_general_support,
+            "AML Business Transformation Analyst", "🧭", ["team_lead"],
             granted_access=["customer_ops_workspace_view"],
         )
         jordan = create_user(
-            "Jordan Lee", "jordan.lee@flowmatch.demo", dept_customer_ops, pod_exception_reporting,
-            "Workflow Owner, Customer Operations", "🗂️", ["workflow_owner"],
+            "Reanne Lord-Simpson", "reanne.lord-simpson@flowmatch.demo", dept_customer_ops, pod_exception_reporting,
+            "Transaction Monitoring Analyst", "🗂️", ["workflow_owner"],
             granted_access=["customer_ops_workspace_view"],
         )
         riley = create_user(
-            "Riley Brooks", "riley.brooks@flowmatch.demo", dept_shared, pod_general_support,
-            "Quality Reviewer", "✅", ["reviewer"],
+            "Hamida Khanom", "hamida.khanom@flowmatch.demo", dept_customer_ops, pod_exception_reporting,
+            "Senior Transaction Monitoring Analyst", "✅", ["reviewer"],
             granted_access=["customer_ops_workspace_view"],
         )
         dana = create_user(
-            "Dana Kim", "dana.kim@flowmatch.demo", dept_biz_improvement, pod_automation_enablement,
-            "Automation Mentor", "🤖", ["mentor", "contributor", "workflow_owner"],
+            "Claus Rasmus Hjort", "claus.rasmus.hjort@flowmatch.demo", dept_biz_improvement, pod_automation_enablement,
+            "Head of Payment Process Automation", "🤖", ["mentor", "contributor", "workflow_owner"],
             granted_access=["customer_ops_workspace_view", "biz_improvement_workspace_view"],
         )
         morgan = create_user(
-            "Morgan Taylor", "morgan.taylor@flowmatch.demo", dept_shared, pod_general_support,
-            "Business Analyst", "🌱", ["contributor"],
+            "David Gluschitz", "david.gluschitz@flowmatch.demo", dept_shared, pod_general_support,
+            "Commercial Reporting Analyst", "🌱", ["contributor"],
             granted_access=["customer_ops_workspace_view"],
         )
         casey = create_user(
-            "Casey Nguyen", "casey.nguyen@flowmatch.demo", dept_shared, pod_general_support,
-            "Junior Analyst", "🚧", ["contributor"],
+            "Thomas Nielsen", "thomas.nielsen@flowmatch.demo", dept_shared, pod_general_support,
+            "Senior Commercial Reporting Analyst", "🚧", ["contributor"],
             granted_access=[],  # deliberately missing access -> demonstrates the blocked-match path
         )
         admin = create_user(
-            "Admin User", "admin@flowmatch.demo", dept_shared, pod_general_support,
+            "FlowMatch Service Administrator", "flowmatch.admin@flowmatch.demo", dept_shared, pod_general_support,
             "Platform Administrator", "🛡️", ["administrator"],
         )
 

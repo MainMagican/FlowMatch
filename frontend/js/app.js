@@ -97,10 +97,11 @@ document.addEventListener("click", (e) => {
 
 /* ---------------- Login ---------------- */
 
-const FEATURED_DEMO_EMAILS = [
-  "priya.sharma@flowmatch.demo", "jordan.lee@flowmatch.demo", "riley.brooks@flowmatch.demo",
-  "dana.kim@flowmatch.demo", "morgan.taylor@flowmatch.demo", "casey.nguyen@flowmatch.demo",
-  "admin@flowmatch.demo",
+const FEATURED_PROFILE_EMAILS = [
+  "ainars.djatlevskis@flowmatch.demo", "reanne.lord-simpson@flowmatch.demo",
+  "hamida.khanom@flowmatch.demo", "claus.rasmus.hjort@flowmatch.demo",
+  "david.gluschitz@flowmatch.demo", "thomas.nielsen@flowmatch.demo",
+  "flowmatch.admin@flowmatch.demo",
 ];
 
 let allDemoUsers = [];
@@ -118,8 +119,8 @@ function renderLoginList(query) {
     (f) => (f || "").toLowerCase().includes(q)
   );
 
-  const featured = allDemoUsers.filter((u) => FEATURED_DEMO_EMAILS.includes(u.email) && matches(u));
-  const rest = allDemoUsers.filter((u) => !FEATURED_DEMO_EMAILS.includes(u.email) && matches(u))
+  const featured = allDemoUsers.filter((u) => FEATURED_PROFILE_EMAILS.includes(u.email) && matches(u));
+  const rest = allDemoUsers.filter((u) => !FEATURED_PROFILE_EMAILS.includes(u.email) && matches(u))
     .slice(0, 40);
 
   function userButton(u, role) {
@@ -140,7 +141,7 @@ function renderLoginList(query) {
     const h = document.createElement("div");
     h.className = "muted";
     h.style.cssText = "font-size:0.78rem; font-weight:700; text-transform:uppercase; margin:6px 0 2px";
-    h.textContent = "Featured demo personas";
+    h.textContent = "Featured profiles";
     list.appendChild(h);
     featured.forEach((u) => (u.roles || []).forEach((role) => list.appendChild(userButton(u, role))));
   }

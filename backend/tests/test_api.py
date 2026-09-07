@@ -7,13 +7,13 @@ from conftest import login, auth_headers
 def test_demo_users_seeded(client):
     users = client.get("/api/auth/demo-users").get_json()
     names = {u["name"] for u in users}
-    assert "Priya Sharma" in names
-    assert "Morgan Taylor" in names
-    assert "Casey Nguyen" in names
+    assert "Ainars Djatlevskis" in names
+    assert "David Gluschitz" in names
+    assert "Thomas Nielsen" in names
 
 
 def test_profile_get_and_update(client):
-    token, _ = login(client, "morgan.taylor@flowmatch.demo", "contributor")
+    token, _ = login(client, "david.gluschitz@flowmatch.demo", "contributor")
     resp = client.get("/api/profile/me", headers=auth_headers(token))
     assert resp.status_code == 200
     profile = resp.get_json()
@@ -31,7 +31,7 @@ def test_profile_get_and_update(client):
 def test_no_endpoint_exposes_a_combined_score(client):
     """design.md FR6/FR19: no endpoint should return an employee ranking or
     a single combined numeric 'score' field."""
-    token, _ = login(client, "morgan.taylor@flowmatch.demo", "contributor")
+    token, _ = login(client, "david.gluschitz@flowmatch.demo", "contributor")
     resp = client.get("/api/matches/recommendations", headers=auth_headers(token))
     assert resp.status_code == 200
     for rec in resp.get_json():
@@ -44,7 +44,7 @@ def test_blocked_publish_path(client):
     """design.md FR14: publish is blocked with structured reasons when the
     seeded incomplete opportunity (missing reviewer/definition-of-done/
     sensitivity) is published."""
-    token, _ = login(client, "priya.sharma@flowmatch.demo", "team_lead")
+    token, _ = login(client, "ainars.djatlevskis@flowmatch.demo", "team_lead")
     opps = client.get("/api/opportunities", headers=auth_headers(token)).get_json()
     incomplete = next(o for o in opps if o["title"].startswith("Shadow the exception-report"))
     resp = client.post(
@@ -56,9 +56,9 @@ def test_blocked_publish_path(client):
 
 
 def test_blocked_match_path(client):
-    """design.md FR16: Casey Nguyen lacks required_authorization for the
+    """design.md FR16: Thomas Nielsen lacks required_authorization for the
     published opportunity, so it must never appear in her recommendations."""
-    token, _ = login(client, "casey.nguyen@flowmatch.demo", "contributor")
+    token, _ = login(client, "thomas.nielsen@flowmatch.demo", "contributor")
     resp = client.get("/api/matches/recommendations", headers=auth_headers(token))
     assert resp.status_code == 200
     titles = [r["opportunity"]["title"] for r in resp.get_json()]
@@ -75,12 +75,12 @@ def test_blocked_match_path(client):
 
 
 def test_full_journey_match_to_review_and_feedback(client):
-    """End-to-end: Morgan is eligible, gets an explained recommendation,
-    expresses interest, Priya approves, Morgan opens the workspace and
-    submits, Riley reviews, Morgan records learning feedback."""
-    morgan_token, morgan_id = login(client, "morgan.taylor@flowmatch.demo", "contributor")
-    priya_token, _ = login(client, "priya.sharma@flowmatch.demo", "team_lead")
-    riley_token, _ = login(client, "riley.brooks@flowmatch.demo", "reviewer")
+    """End-to-end: David is eligible, gets an explained recommendation,
+    expresses interest, Ainars approves, David opens the workspace and
+    submits, Hamida reviews, and David records learning feedback."""
+    morgan_token, morgan_id = login(client, "david.gluschitz@flowmatch.demo", "contributor")
+    priya_token, _ = login(client, "ainars.djatlevskis@flowmatch.demo", "team_lead")
+    riley_token, _ = login(client, "hamida.khanom@flowmatch.demo", "reviewer")
 
     recs = client.get("/api/matches/recommendations", headers=auth_headers(morgan_token)).get_json()
     assert len(recs) >= 1
@@ -135,8 +135,8 @@ def test_full_journey_match_to_review_and_feedback(client):
 def test_workflow_validation_lifecycle_and_role_enforcement(client):
     """design.md FR9: only workflow_owner may validate/publish; non-owners
     are rejected server-side."""
-    jordan_token, _ = login(client, "jordan.lee@flowmatch.demo", "workflow_owner")
-    morgan_token, _ = login(client, "morgan.taylor@flowmatch.demo", "contributor")
+    jordan_token, _ = login(client, "reanne.lord-simpson@flowmatch.demo", "workflow_owner")
+    morgan_token, _ = login(client, "david.gluschitz@flowmatch.demo", "contributor")
 
     workflows = client.get("/api/workflows", headers=auth_headers(jordan_token)).get_json()
     workflow = next(w for w in workflows if w["name"].startswith("Prepare weekly"))
@@ -152,7 +152,7 @@ def test_workflow_validation_lifecycle_and_role_enforcement(client):
 
 
 def test_similarity_and_reuse_recommendation(client):
-    token, _ = login(client, "dana.kim@flowmatch.demo", "workflow_owner")
+    token, _ = login(client, "claus.rasmus.hjort@flowmatch.demo", "workflow_owner")
     workflows = client.get("/api/workflows", headers=auth_headers(token)).get_json()
     wf1 = next(w for w in workflows if w["name"].startswith("Prepare weekly"))
     wf2 = next(w for w in workflows if w["name"].startswith("Prepare monthly"))
@@ -172,7 +172,7 @@ def test_similarity_and_reuse_recommendation(client):
 
 
 def test_extraction_service_marks_ai_generated_and_uncertain_fields(client):
-    token, _ = login(client, "priya.sharma@flowmatch.demo", "team_lead")
+    token, _ = login(client, "ainars.djatlevskis@flowmatch.demo", "team_lead")
     resp = client.post(
         "/api/workflows",
         headers=auth_headers(token),
