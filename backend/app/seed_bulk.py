@@ -289,6 +289,10 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
          original_users["jordan"], original_users["riley"]),
     )
     conn.execute(
+        "UPDATE users SET manager_id = ? WHERE department_id = ? AND id != ?",
+        (dept_heads["Business AML"], dept_ids["Business AML"], dept_heads["Business AML"]),
+    )
+    conn.execute(
         "UPDATE users SET manager_id = ? WHERE id = ?",
         (dept_heads["Global Core Operations"], original_users["dana"]),
     )
