@@ -298,11 +298,6 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
          pod_leads["Transaction Monitoring & Investigations"],
          original_users["jordan"], original_users["riley"]),
     )
-    conn.execute(
-        "UPDATE users SET manager_id = ? WHERE department_id = ? AND id != ?",
-        (dept_heads["Business AML"], dept_ids["Business AML"], dept_heads["Business AML"]),
-    )
-
     # Named AML staff from the July 2026 deep-dive slides. These are the
     # authored leaves; no synthetic AML employees are generated here.
     aml_staff = {
@@ -375,13 +370,30 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
         for person_name, role_title in staff:
             staff_id = make_user(
                 dept_ids["Business AML"], pod_ids[pod_name], role_title, ["contributor"],
-                manager_id=dept_heads["Business AML"], person_name=person_name,
+                manager_id=pod_leads[pod_name], person_name=person_name,
                 skills=rng.sample(FINTECH_SKILLS, k=2),
             )
             conn.execute(
                 "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id = ?",
-                (dept_ids["Business AML"], pod_ids[pod_name], dept_heads["Business AML"], staff_id),
+                (dept_ids["Business AML"], pod_ids[pod_name], pod_leads[pod_name], staff_id),
             )
+
+    # Team leads follow the authored reporting lines from slides 13-17.
+    tm_head = pod_leads["Transaction Monitoring & Investigations"]
+    conn.execute(
+        "UPDATE users SET manager_id = ? WHERE id IN (?, ?, ?)",
+        (tm_head, pod_leads["Transaction Monitoring - Team DK"],
+         pod_leads["Transaction Monitoring - Team UK"], pod_leads["AML Intelligence & Investigations"]),
+    )
+    conn.execute(
+        "UPDATE users SET manager_id = ? WHERE name = ?",
+        (dept_heads["Business AML"], "Venus Leung"),
+    )
+    conn.execute(
+        "UPDATE users SET manager_id = (SELECT id FROM users WHERE name = ?) WHERE name IN (?, ?, ?, ?, ?, ?, ?)",
+        ("Venus Leung", "Wei Qi", "Teddy Tsang", "Ellie Killip", "Ella Jones", "Lizzie North",
+         "Subodh Desai", "Sebastian Chua"),
+    )
     conn.execute(
         "UPDATE users SET manager_id = ? WHERE id = ?",
         (dept_heads["Global Core Operations"], original_users["dana"]),
