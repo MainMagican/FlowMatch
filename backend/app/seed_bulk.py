@@ -277,9 +277,10 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
 
     # Place the named internal profiles in their chart-defined teams.
     conn.execute(
-        "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id = ?",
+        "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id IN (?, ?, ?)",
         (dept_ids["Client Technology"], pod_ids["Commercial Analytics & Tools"],
-         pod_leads["Commercial Analytics & Tools"], original_users["priya"]),
+         pod_leads["Commercial Analytics & Tools"], original_users["priya"],
+         original_users["morgan"], original_users["casey"]),
     )
     conn.execute(
         "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id IN (?, ?)",
