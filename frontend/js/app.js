@@ -487,14 +487,6 @@ async function renderCompanyTree() {
   const el = $("#company-tree");
   const myId = state.user.id;
 
-  if (window.mountOrgScene) {
-    el.style.display = "none";
-    const sceneEl = $("#org-scene");
-    sceneEl.style.display = "block";
-    window.mountOrgScene(data, myId, sceneEl);
-    return;
-  }
-
   function pathToMe(node, path) {
     const newPath = [...path, node.id];
     if (node.id === myId) return newPath;

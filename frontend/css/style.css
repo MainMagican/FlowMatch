@@ -442,13 +442,6 @@ label input, label textarea, label select { display: block; width: 100%; margin-
 .tree-toggle-spacer { width: 14px; display: inline-block; }
 .tree-children { margin-top: 2px; }
 .tree-children.collapsed { display: none; }
-.org-scene { display: none; height: 620px; min-height: 420px; overflow: hidden; position: relative; background: radial-gradient(circle at 50% 35%, rgba(109,77,255,0.12), transparent 48%), var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); }
-.org-scene canvas { display: block; width: 100%; height: 100%; }
-.org-scene-label { color: var(--text); background: rgba(255,255,255,0.94); border: 1px solid var(--border); border-radius: 7px; padding: 6px 9px; min-width: 120px; text-align: center; box-shadow: 0 5px 18px rgba(35,28,66,0.12); pointer-events: none; }
-.org-scene-label strong { display: block; font-size: 0.78rem; }
-.org-scene-label span { display: block; color: var(--muted); font-size: 0.66rem; margin-top: 2px; }
-.org-scene-label.org-scene-me { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(109,77,255,0.18); }
-.org-scene-hint { position: absolute; left: 14px; bottom: 12px; color: var(--muted); font-size: 0.75rem; background: rgba(255,255,255,0.86); padding: 6px 8px; border-radius: 6px; }
 .wf-section-title { font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 12px; }
 .wf-upload-box { background: var(--surface-2); border: 1px dashed var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin: 4px 0 16px; }
 .wf-upload-box input[type="file"] { display: block; margin-top: 6px; }
