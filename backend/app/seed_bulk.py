@@ -149,9 +149,19 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
         ("Business AML", "Client due diligence, financial-crime operations, and investigations.",
          ("James Grant", "Head of Business AML"), [
             ("Client Due Diligence", "Dean Fry", "Head of Client Due Diligence", 14, True),
+            ("KYC Refresh", "Payal Hindocha", "KYC Refresh & Quality Control Lead", 12, True),
+            ("EDD & Onsite Review", "Harjot Deooray", "AML Onsite Review Team Lead", 8, True),
+            ("KYC Onboarding", "Matthew Stokes", "KYC Onboarding Team Lead", 10, True),
+            ("Enhanced AML Client Review", "Jess Harwood", "Enhanced AML Client Review Team Lead", 6, True),
+            ("KYC Investment Funds", "Luca Tomasi", "KYC Investment Funds Team Lead", 6, True),
             ("Transaction Monitoring & Investigations", "Emma Johnson", "Head of TM & Investigations", 12, True),
-            ("Sanctions Screening", "Kelvin Asare-Ofei", "Sanctions Screening Lead", 10, True),
+            ("Transaction Monitoring - Team DK", "Nanna Skov Mogensen", "Transaction Monitoring Lead", 7, True),
+            ("Transaction Monitoring - Team UK", "Holly McCarthny", "Transaction Monitoring Lead", 14, True),
             ("AML Intelligence & Investigations", "Sophie Bielska", "Team Lead", 6, False),
+            ("Sanctions Screening - Level 1", "Stuart Lackford", "Sanctions Screening Manager", 9, True),
+            ("Sanctions Advisory", "Kate Potapenko", "Sanctions Advisory Analyst", 1, False),
+            ("Sanctions Screening - Level 2", "Kelvin Asare-Ofei", "Sanctions Screening Lead", 9, True),
+            ("Digital Assets AML", "Demet Sahin", "Digital Assets AML Lead", 1, True),
         ]),
         ("Commercial", "Commercial strategy, sales, account management, and market engagement.",
          ("Mishal Ruparel", "Chief Commercial Officer"), [
@@ -292,6 +302,86 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
         "UPDATE users SET manager_id = ? WHERE department_id = ? AND id != ?",
         (dept_heads["Business AML"], dept_ids["Business AML"], dept_heads["Business AML"]),
     )
+
+    # Named AML staff from the July 2026 deep-dive slides. These are the
+    # authored leaves; no synthetic AML employees are generated here.
+    aml_staff = {
+        "KYC Refresh": [
+            ("Priten Varsani", "Senior KYC Refresh Analyst"), ("Gianna Hodonou", "KYC Refresh Analyst"),
+            ("Priyen Patel", "KYC Refresh Analyst"), ("Emeka Obubu", "Senior KYC Refresh Analyst"),
+            ("Anastasija Razeva", "KYC Refresh Analyst"), ("Sophie Maksymiw", "KYC Refresh Analyst"),
+            ("Christina Josiah", "KYC Refresh Analyst"), ("Karis Liu", "KYC Refresh Analyst"),
+            ("Abigail Jokosenumi", "KYC Refresh Analyst"), ("Kruti Jain", "KYC Refresh Analyst"),
+            ("Asil Yakub", "KYC Refresh Analyst"), ("Asha Sahota", "QC Analyst"),
+            ("Emily Quarcoopome", "QC Analyst"), ("Jon May", "QC Analyst"),
+            ("Faraaj Fathi Al Mohamed", "QC Analyst"), ("Gordon Asare", "QC Analyst"),
+            ("Catherine Lam", "QC Analyst"),
+        ],
+        "EDD & Onsite Review": [
+            ("Dajinder Singh", "Senior AML Onsite Review Officer"), ("David Rhimes", "AML Onsite Review Officer"),
+            ("Petra Dhesi", "AML Onsite Review Officer"), ("Patricia Goode", "AML Onsite Review Officer"),
+            ("Anthony Yussuf", "AML Onsite Review Officer"), ("Malcolm Giacomelli", "AML Onsite Review Officer"),
+            ("Carla Esiekpe", "Senior AML Onsite Review Officer"),
+        ],
+        "KYC Onboarding": [
+            ("Kiran Bual", "Senior KYC Onboarding Analyst"), ("Azhar Rehman", "Senior KYC Onboarding Analyst"),
+            ("Sri Raksha", "Senior KYC Onboarding Analyst"), ("Doyin George", "Senior KYC Onboarding Analyst"),
+            ("Nicola Whitby", "KYC Onboarding Analyst"), ("Denzel Essuah-Mensah", "KYC Onboarding Analyst"),
+            ("Sarah Westwood", "KYC Onboarding Analyst"), ("Shilpi Sood", "KYC Onboarding Analyst"),
+            ("Krupa Govindia", "KYC Onboarding Analyst"),
+        ],
+        "KYC Investment Funds": [
+            ("Tom Skillett", "KYC Onboarding Analyst, Funds"), ("Tobi Adegoke", "Senior KYC Onboarding Analyst"),
+            ("Izabella Uko Eninn", "Senior KYC Onboarding Analyst"), ("Euclides Lopes", "KYC Onboarding Analyst"),
+            ("Riccardo Di Iacovo", "Junior KYC Refresh Analyst"),
+        ],
+        "Transaction Monitoring - Team UK": [
+            ("Reanne Lord-Simpson", "Transaction Monitoring Analyst"), ("Hamida Khanom", "Senior Transaction Monitoring Analyst"),
+            ("Michael Delaney", "Transaction Monitoring Analyst"), ("Meera Hawes", "Transaction Monitoring Analyst"),
+            ("Amy Bowskill", "Senior Transaction Monitoring Analyst"), ("Dominic Twelvetrees", "Transaction Monitoring Analyst"),
+            ("Vindhya Sree Yellapu", "Transaction Monitoring Analyst"), ("Anusaanth Jeyakanthan", "Transaction Monitoring Analyst"),
+            ("Megan Webb", "Transaction Monitoring Analyst"), ("Kavitha Karthik", "Transaction Monitoring Analyst"),
+            ("Matthew Thomson", "Transaction Monitoring Analyst"), ("Shuyi Li", "Transaction Monitoring Analyst"),
+            ("Karen Norman", "Transaction Monitoring Analyst"),
+        ],
+        "Transaction Monitoring - Team DK": [
+            ("Maria Sujova", "Senior Transaction Monitoring Analyst"), ("Yue Zhang", "Senior Transaction Monitoring Analyst"),
+            ("Agnieszka Zuba", "Senior Transaction Monitoring Analyst"), ("Casper Nielsen", "Transaction Monitoring Analyst"),
+            ("Niclas Mathiassen", "Transaction Monitoring Analyst"), ("Martina Dezotti", "Transaction Monitoring Analyst"),
+            ("Gabriela Sejbuk", "Transaction Monitoring Analyst"),
+        ],
+        "AML Intelligence & Investigations": [
+            ("Rohan Stanley", "AML Intelligence & Investigations Analyst"),
+            ("Robert James Holden-Millar", "AML Intelligence & Investigations Analyst"),
+        ],
+        "Sanctions Screening - Level 1": [
+            ("Chrissie Murphy", "Sanctions Screening Analyst"), ("Phravina Selva Kumar", "Sanctions Screening Analyst"),
+            ("Fauzia Ali", "Sanctions Screening Analyst"), ("Shazil Doole", "Sanctions Screening Analyst"),
+            ("Carmen Withag", "Sanctions Screening Analyst"), ("Kyle Girn", "Sanctions Screening Analyst"),
+            ("Venus Chan", "Sanctions Screening Analyst"), ("Samson Adetunji", "Sanctions Screening Analyst"),
+            ("Venus Leung", "AML Regional Lead"), ("Wei Qi", "AML Specialist"),
+            ("Teddy Tsang", "AML Specialist"), ("Ellie Killip", "AML Specialist"),
+            ("Ella Jones", "AML Specialist"), ("Lizzie North", "KYC Onboarding Analyst"),
+            ("Subodh Desai", "AML Specialist"), ("Sebastian Chua", "AML Specialist"),
+        ],
+        "Sanctions Screening - Level 2": [
+            ("Matibona Patsika", "Sanctions Screening Analyst"), ("Oliver Bottomley", "Sanctions Screening Analyst"),
+            ("Nicholas Caldeira", "Sanctions Screening Analyst"), ("Harkirat Bhullar", "Senior Sanctions Screening Analyst"),
+            ("Callum Webb", "Sanctions Screening Analyst"), ("Charlie Horrigan", "Sanctions Screening Analyst"),
+            ("Tobi Harrison-Abiola", "Sanctions Screening Analyst"), ("Javier Ang Wei Jun", "Sanctions Screening Analyst"),
+        ],
+    }
+    for pod_name, staff in aml_staff.items():
+        for person_name, role_title in staff:
+            staff_id = make_user(
+                dept_ids["Business AML"], pod_ids[pod_name], role_title, ["contributor"],
+                manager_id=dept_heads["Business AML"], person_name=person_name,
+                skills=rng.sample(FINTECH_SKILLS, k=2),
+            )
+            conn.execute(
+                "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id = ?",
+                (dept_ids["Business AML"], pod_ids[pod_name], dept_heads["Business AML"], staff_id),
+            )
     conn.execute(
         "UPDATE users SET manager_id = ? WHERE id = ?",
         (dept_heads["Global Core Operations"], original_users["dana"]),
