@@ -10,8 +10,10 @@ those staying put).
 """
 
 import json
+import os
 import random
 from datetime import datetime, timezone
+from pathlib import Path
 
 FIRST_NAMES = [
     "James", "Maria", "Wei", "Fatima", "Liam", "Sofia", "Noah", "Amara", "Yusuf", "Elena",
@@ -46,6 +48,73 @@ OPPORTUNITY_TYPE_POOL = [
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
+
+
+def _canonical_master_path():
+    configured = os.environ.get("FLOWMATCH_ORG_MASTER")
+    candidates = [
+        Path(configured) if configured else None,
+        Path.home() / "OneDrive - Banking Circle" / "Skrivebord" / "AI ready" / "BC_Master_Org_Master.txt",
+    ]
+    return next((path for path in candidates if path and path.is_file()), None)
+
+
+def _import_canonical_master(conn, make_user, skill_ids, fintech_skills, dept_ids, pod_ids, pod_leads):
+    """Overlay the current employee master without committing the source file.
+
+    The master is intentionally optional: local internal environments can keep
+    the confidential file in OneDrive, while tests and external clones retain
+    the deterministic fallback seed.
+    """
+    source = _canonical_master_path()
+    if not source:
+        return 0
+
+    records = []
+    for line in source.read_text(encoding="utf-8-sig").splitlines()[1:]:
+        fields = [field.strip() for field in line.split("|")]
+        if len(fields) != 5 or not all(fields):
+            continue
+        records.append(dict(zip(("name", "title", "reports_to", "department", "location"), fields)))
+
+    user_ids = {}
+    for record in records:
+        department = record["department"]
+        department_row = conn.execute("SELECT id FROM departments WHERE name = ?", (department,)).fetchone()
+        department_id = department_row["id"] if department_row else conn.execute(
+            "INSERT INTO departments (name, description) VALUES (?, ?)",
+            (department, f"Canonical Banking Circle department: {department}."),
+        ).lastrowid
+        dept_ids.setdefault(department, department_id)
+
+        pod_row = conn.execute(
+            "SELECT id FROM pods WHERE name = ? AND department_id = ?", (department, department_id)
+        ).fetchone()
+        pod_id = pod_row["id"] if pod_row else conn.execute(
+            "INSERT INTO pods (name, department_id, description) VALUES (?, ?, ?)",
+            (department, department_id, f"Canonical team: {department}."),
+        ).lastrowid
+        pod_ids.setdefault(department, pod_id)
+
+        user_id = make_user(
+            department_id, pod_id, record["title"], ["contributor"],
+            manager_id=None, skills=random.sample(fintech_skills, k=2), person_name=record["name"],
+        )
+        user_ids[record["name"]] = user_id
+        conn.execute(
+            "UPDATE users SET department_id = ?, pod_id = ?, role_title = ? WHERE id = ?",
+            (department_id, pod_id, record["title"], user_id),
+        )
+
+    for record in records:
+        manager_name = record["reports_to"]
+        manager_name = manager_name.split(" and ")[0].strip()
+        manager_id = user_ids.get(manager_name)
+        conn.execute("UPDATE users SET manager_id = ? WHERE id = ?", (manager_id, user_ids[record["name"]]))
+        if any(marker in record["title"].lower() for marker in ("lead", "head", "chief", "director", "manager")):
+            conn.execute("UPDATE pods SET lead_user_id = ? WHERE id = ?", (user_ids[record["name"]], pod_ids[record["department"]]))
+
+    return len(records)
 
 
 def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
@@ -570,5 +639,9 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
          ("Measure performance", "assistance_requested")],
     )
 
+    canonical_count = _import_canonical_master(
+        conn, make_user, skill_ids, FINTECH_SKILLS, dept_ids, pod_ids, pod_leads
+    )
     print(f"FlowMatch bulk org seeded: {len(dept_ids) + 1} new departments, "
-          f"{conn.execute('SELECT COUNT(*) c FROM users').fetchone()['c']} total users.")
+          f"{conn.execute('SELECT COUNT(*) c FROM users').fetchone()['c']} total users "
+          f"({canonical_count} canonical master records applied).")
