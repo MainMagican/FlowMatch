@@ -110,6 +110,11 @@ def _import_canonical_master(conn, make_user, skill_ids, fintech_skills, dept_id
         manager_name = record["reports_to"]
         manager_name = manager_name.split(" and ")[0].strip()
         manager_id = user_ids.get(manager_name)
+        if not manager_id:
+            existing_manager = conn.execute(
+                "SELECT id FROM users WHERE name = ?", (manager_name,)
+            ).fetchone()
+            manager_id = existing_manager["id"] if existing_manager else None
         conn.execute("UPDATE users SET manager_id = ? WHERE id = ?", (manager_id, user_ids[record["name"]]))
         if any(marker in record["title"].lower() for marker in ("lead", "head", "chief", "director", "manager")):
             conn.execute("UPDATE pods SET lead_user_id = ? WHERE id = ?", (user_ids[record["name"]], pod_ids[record["department"]]))
