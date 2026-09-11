@@ -130,8 +130,10 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
         ("Executive Leadership", dept_exec, "C-suite and executive staff."),
     ).lastrowid
     ceo_id = make_user(dept_exec, pod_exec, "Chief Executive Officer", ["administrator"], manager_id=None,
-                        ai_band="Enabler", person_name="Laust Bertelsen")
+                        ai_band="Enabler", person_name="Morten Lilleøre")
     conn.execute("UPDATE pods SET lead_user_id = ? WHERE id = ?", (ceo_id, pod_exec))
+    make_user(dept_exec, pod_exec, "Advisory role", ["contributor"], manager_id=ceo_id,
+              ai_band="Enabler", person_name="Laust Bertelsen")
 
     # Wire the named internal profiles into the organization tree.
     conn.execute("UPDATE users SET manager_id = ? WHERE id = ?", (ceo_id, original_users["priya"]))
@@ -181,6 +183,8 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
             ("Client Integration", "Giuditta Introini", "Head of Client Integration", 8, False),
             ("Client Platform", "Stefan Kretzer", "Head of Client Platform", 12, False),
             ("Commercial Analytics & Tools", "Sebastian Gabel", "Head of Commercial Analytics & Tools", 8, False),
+            ("Agentic Automation", "Silvia Gatto", "Team Lead, Agentic Automation", 1, False),
+            ("Client Lifecycle Management Platform", "Peter Török", "Team Lead, Client Lifecycle Management Platform", 7, False),
         ]),
         ("Core Technology", "Core payments, banking, and business-test technology.",
          ("Lars Bæk Pedersen", "Co-Head of Core Technology"), [
@@ -245,6 +249,10 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
             ("Fraud Investigations", "Andi Maliqi", "Head of Fraud Investigations", 7, True),
             ("Compliance Controls & Governance", "Pippa Vilas", "Head of Compliance Controls & Governance", 7, False),
             ("International Compliance", "Peter Paulsen", "Head of International Compliance", 7, False),
+        ]),
+        ("Internal Audit", "Independent control function and internal audit.",
+         ("Stéphanie Van Tieghem", "Chief Internal Auditor"), [
+            ("Internal Audit", "Stéphanie Van Tieghem", "Chief Internal Auditor", 4, False),
         ]),
     ]
 
@@ -376,6 +384,36 @@ def seed_bulk(conn, skill_id, extra_skill_catalogue, original_users):
             conn.execute(
                 "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id = ?",
                 (dept_ids["Business AML"], pod_ids[pod_name], pod_leads[pod_name], staff_id),
+            )
+
+    revised_named_staff = {
+        "Commercial Analytics & Tools": [
+            ("Kiril Ranchev", "Principal Business Analyst"),
+            ("Martin Bruun", "Solution Architect and Tech Lead"),
+            ("Vahid Amiri Motlagh", "Development Engineer"),
+            ("Dhawan Dikshit", "Senior Development Engineer"),
+            ("Yan Kovyakh", "Development Engineer"),
+            ("Dennis Rosenkvist-Jensen", "Principal Development Engineer"),
+        ],
+        "Agentic Automation": [("Cecilie Christensen", "Junior CRM Business Analyst")],
+        "Internal Audit": [
+            ("Shaun McGrath", "ICT Internal Audit Manager"),
+            ("Hugues Evennou", "Senior Integrated Internal Auditor"),
+            ("Jing Niu", "Integrated Internal Auditor"),
+            ("Arnaud Delatte", "Senior Internal Auditor"),
+        ],
+    }
+    for pod_name, staff in revised_named_staff.items():
+        for person_name, role_title in staff:
+            staff_id = make_user(
+                dept_ids["Client Technology"] if pod_name != "Internal Audit" else dept_ids["Internal Audit"],
+                pod_ids[pod_name], role_title, ["contributor"], manager_id=pod_leads[pod_name],
+                person_name=person_name, skills=rng.sample(FINTECH_SKILLS, k=2),
+            )
+            conn.execute(
+                "UPDATE users SET department_id = ?, pod_id = ?, manager_id = ? WHERE id = ?",
+                (dept_ids["Client Technology"] if pod_name != "Internal Audit" else dept_ids["Internal Audit"],
+                 pod_ids[pod_name], pod_leads[pod_name], staff_id),
             )
 
     # Team leads follow the authored reporting lines from slides 13-17.
