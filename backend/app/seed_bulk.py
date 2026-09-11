@@ -78,6 +78,9 @@ def _import_canonical_master(conn, make_user, skill_ids, fintech_skills, dept_id
         records.append(dict(zip(("name", "title", "reports_to", "department", "location"), fields)))
 
     user_ids = {}
+    referenced_manager_titles = {
+        "Louise Randrup Noe": "Team Lead, AA Apps",
+    }
     for record in records:
         department = record["department"]
         department_row = conn.execute("SELECT id FROM departments WHERE name = ?", (department,)).fetchone()
@@ -115,6 +118,14 @@ def _import_canonical_master(conn, make_user, skill_ids, fintech_skills, dept_id
                 "SELECT id FROM users WHERE name = ?", (manager_name,)
             ).fetchone()
             manager_id = existing_manager["id"] if existing_manager else None
+        if not manager_id and manager_name not in {"TBD", "Board of Directors", "TBD (not explicit in source)"}:
+            department_id = dept_ids[record["department"]]
+            pod_id = pod_ids[record["department"]]
+            manager_id = make_user(
+                department_id, pod_id, referenced_manager_titles.get(manager_name, "Canonical manager"),
+                ["team_lead"], manager_id=None, person_name=manager_name,
+            )
+            user_ids[manager_name] = manager_id
         conn.execute("UPDATE users SET manager_id = ? WHERE id = ?", (manager_id, user_ids[record["name"]]))
         if any(marker in record["title"].lower() for marker in ("lead", "head", "chief", "director", "manager")):
             conn.execute("UPDATE pods SET lead_user_id = ? WHERE id = ?", (user_ids[record["name"]], pod_ids[record["department"]]))
