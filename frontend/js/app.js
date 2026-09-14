@@ -107,7 +107,30 @@ const FEATURED_PROFILE_EMAILS = [
 let allDemoUsers = [];
 
 async function initLogin() {
-  allDemoUsers = await Api.demoUsers();
+  const list = $("#demo-user-list");
+  list.innerHTML = `<p class="muted">Loading employees…</p>`;
+  try {
+    allDemoUsers = await Api.demoUsers();
+  } catch (err) {
+    // The backend can still be warming up right as this page loads (or a
+    // transient network hiccup) - retry a couple of times with a short
+    // delay instead of leaving the list permanently empty until the user
+    // manually refreshes.
+    list.innerHTML = `<p class="muted">Connecting… retrying</p>`;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      try {
+        allDemoUsers = await Api.demoUsers();
+        break;
+      } catch (retryErr) {
+        if (attempt === 3) {
+          list.innerHTML = `<p class="error">Could not reach the server. <button class="secondary" id="retry-login-list-btn" type="button">Retry</button></p>`;
+          $("#retry-login-list-btn")?.addEventListener("click", () => initLogin());
+          return;
+        }
+      }
+    }
+  }
   renderLoginList("");
   $("#user-search").addEventListener("input", (e) => renderLoginList(e.target.value));
 }
