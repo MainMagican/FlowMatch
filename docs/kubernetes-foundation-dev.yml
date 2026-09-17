@@ -7,5 +7,5 @@ spec:
   saviyntOwner: aind
   ado_project: Commercial Digitalization
   quota:
-    cpu: "2"
-    memory: 2Gi
+    cpu: "20"
+    memory: 20Gi
