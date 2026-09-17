@@ -1,7 +1,17 @@
 /* Thin fetch() wrapper for the FlowMatch API. Bearer token in localStorage
    (docs/DECISIONS.md #3 - dev-mode identity, no real SSO). */
 
-const API_BASE = "http://127.0.0.1:8100/api";
+// Local dev (frontend served from 127.0.0.1/localhost via serve.py) talks to
+// the backend's own port directly. In containers/Kubernetes, config.js
+// (rendered from config.js.template at container start-up, see
+// docker-entrypoint.sh) sets window.FLOWMATCH_API_BASE from the
+// environment's API_BASE_URL. If neither applies, fall back to a relative
+// "/api" for same-origin deployments.
+const API_BASE = window.FLOWMATCH_API_BASE || (
+  (location.hostname === "127.0.0.1" || location.hostname === "localhost")
+    ? "http://127.0.0.1:8100/api"
+    : "/api"
+);
 
 const Api = {
   token() {

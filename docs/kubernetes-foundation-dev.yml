@@ -1,0 +1,11 @@
+apiVersion: atlas.bankingcircle.com/v3alpha1
+kind: KubernetesFoundation
+metadata:
+  name: flowmatch
+spec:
+  prefix: flowmatch
+  saviyntOwner: aind
+  ado_project: Commercial Digitalization
+  quota:
+    cpu: "2"
+    memory: 2Gi

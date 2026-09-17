@@ -1,0 +1,10 @@
+hostNames:
+  - flowmatch-backend-dev.kubernetes.bankingcircle.net
+envVariables:
+  FLOWMATCH_FRONTEND_URL: https://flowmatch-dev.kubernetes.bankingcircle.net
+  AZURE_REDIRECT_URI: https://flowmatch-backend-dev.kubernetes.bankingcircle.net/api/auth/sso/callback
+  SSO_ALLOWED_EMAIL_DOMAIN: bankingcircle.com
+  # AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / AZURE_TENANT_ID: to be added by IT
+  # as Key Vault-backed secrets once the Entra ID App Registration exists
+  # (see docs/SSO_SETUP.md). Until then SSO stays disabled and the dev-mode
+  # demo login keeps working.

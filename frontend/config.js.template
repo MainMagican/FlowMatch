@@ -1,0 +1,5 @@
+// Generated at container start-up from environments/<env>.yaml's
+// API_BASE_URL env var (see docker-entrypoint.sh). In local dev this file
+// doesn't exist / is never fetched successfully, so api.js falls back to
+// its localhost default.
+window.FLOWMATCH_API_BASE = "${API_BASE_URL}";

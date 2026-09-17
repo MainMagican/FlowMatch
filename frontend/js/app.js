@@ -265,7 +265,7 @@ function onAuthenticated() {
   $("#identity-avatar").textContent = state.user.avatar_emoji || "👤";
   $("#identity-role-badge").textContent = fmtLabel(state.user.active_role);
   $("#identity-name").textContent = state.user.name;
-  goto("dashboard");
+  goto("profile");
   refreshApprovalsBell();
   if (state.approvalsBellTimer) clearInterval(state.approvalsBellTimer);
   state.approvalsBellTimer = setInterval(refreshApprovalsBell, 45000);

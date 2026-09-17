@@ -1,0 +1,34 @@
+version: "3.9"
+
+# Local container parity check before deploying to the Kubernetes Foundation.
+# Run: docker compose up --build
+# Then open http://127.0.0.1:5600
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8100:8100"
+    environment:
+      FLOWMATCH_DB_PATH: /data/flowmatch.db
+      FLOWMATCH_FRONTEND_URL: http://127.0.0.1:5600
+      AZURE_REDIRECT_URI: http://127.0.0.1:8100/api/auth/sso/callback
+      # AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / AZURE_TENANT_ID: set these
+      # once IT provisions the Entra ID App Registration (docs/SSO_SETUP.md).
+    volumes:
+      - flowmatch-db:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/api/health').read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5600:8080"
+    depends_on:
+      - backend
+
+volumes:
+  flowmatch-db:

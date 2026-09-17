@@ -1,0 +1,25 @@
+# FlowMatch backend deployment config - "3 YAML approach"
+# (https://atlas.bankingcircle.com/kubernetes-foundation).
+# Pin the plan tag to the latest stable release before your first PR - check
+# https://dev.azure.com/banking-circle-payment-systems/DevelopmentExcellence/_git/devops.shuttle.plan.simpleApp.v2/tags
+plan: git://git@ssh.dev.azure.com:v3/banking-circle-payment-systems/DevelopmentExcellence/devops.shuttle.plan.simpleApp.v2#3.5.5
+vars:
+  docker:
+    destImage: flowmatch/backend
+    port: 8100
+  k8s:
+    replicas: 1
+  app:
+    prefix: flowmatch
+    name: backend
+  environments:
+    path: environments
+  healthCheck:
+    enabled: true
+    endpoint: /api/health
+  requests:
+    cpu: 0.1
+    memory: 128Mi
+  limits:
+    cpu: 0.5
+    memory: 256Mi
