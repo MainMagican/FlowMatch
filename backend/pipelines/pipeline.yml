@@ -11,9 +11,9 @@
 #      to your Azure DevOps user settings (SSH public keys), and upload the
 #      private key as a Secure File named `id_shuttle_ado` in this project's
 #      Pipeline Library - shuttle uses it to push manifests to flowmatch.gitops.
-#   3. Confirm the ACR name with Atlas Support (placeholder below assumes
-#      "flowmatchregistry<env>" - the platform team will tell you the real one
-#      if it differs, e.g. a shared registry).
+#   3. ACR: confirmed by Atlas Support - it's the shared platform registry
+#      "devopsplatformregistry<env>" (see devops.templates.kubernetes
+#      examples/helmApp/pipeline.yml), not a per-app registry.
 #   4. Create this pipeline in Azure DevOps pointing at this file, and set the
 #      imageTag default if you don't want to rely on $(Build.BuildNumber).
 
@@ -102,7 +102,7 @@ stages:
               - template: push.yml@templates
                 parameters:
                   imageName: flowmatch/backend
-                  registryName: flowmatchregistry${{env}} # confirm with Atlas Support
+                  registryName: devopsplatformregistry${{env}} # confirmed shared platform ACR
                   clientId: $(flowmatch-client-id)
                   clientSecret: $(flowmatch-client-secret)
                   tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1

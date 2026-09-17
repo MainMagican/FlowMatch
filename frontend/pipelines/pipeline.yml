@@ -78,7 +78,7 @@ stages:
               - template: push.yml@templates
                 parameters:
                   imageName: flowmatch/frontend
-                  registryName: flowmatchregistry${{env}} # confirm with Atlas Support
+                  registryName: devopsplatformregistry${{env}} # confirmed shared platform ACR
                   clientId: $(flowmatch-client-id)
                   clientSecret: $(flowmatch-client-secret)
                   tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1

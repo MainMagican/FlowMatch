@@ -15,19 +15,23 @@ Blueprint ("3 YAML approach": https://atlas.bankingcircle.com/kubernetes-foundat
 
 ## Remaining one-time setup (manual, in Azure DevOps)
 
-1. **SSH key for shuttle**: generate a key pair (`ssh-keygen -t ed25519`).
-   Upload the public key to your [Azure DevOps user SSH keys](https://dev.azure.com/banking-circle-payment-systems/_usersSettings/keys).
-   Upload the private key as a **Secure File** named `id_shuttle_ado` in the
-   `Commercial Digitalization` project's Pipeline Library.
-2. **Confirm the ACR (container registry) name** with Atlas Support - the
-   pipelines currently assume `flowmatchregistry<env>` as a placeholder.
-3. **Register both pipelines** in Azure DevOps (Pipelines → New pipeline →
+1. ✅ **SSH key for shuttle**: RSA 4096 key pair generated. Public key added
+   to Azure DevOps user SSH keys. Private key uploaded as a **Secure File**
+   named `id_shuttle_ado` in the `Commercial Digitalization` project's
+   Pipeline Library.
+2. ✅ **ACR (container registry) name confirmed** by Atlas Support: it's the
+   shared platform registry `devopsplatformregistry<env>` (e.g.
+   `devopsplatformregistrydev`), not a per-app registry. Both pipelines
+   updated accordingly.
+3. ⏳ **Register both pipelines** in Azure DevOps (Pipelines → New pipeline →
    point at `aind/FlowMatch/backend/pipelines/pipeline.yml` and
    `aind/FlowMatch/frontend/pipelines/pipeline.yml` in this repo).
-4. Once merged and the Foundation exists, the `flowmatch-aks-dev-vars`
+4. ⏳ Once merged and the Foundation exists, the `flowmatch-aks-dev-vars`
    variable group (with `flowmatch-client-id`/`flowmatch-client-secret`) and
-   the `flowmatch.gitops` repo should already exist automatically - verify
-   both are visible in the `Commercial Digitalization` project.
+   the `flowmatch.gitops` repo should already exist automatically. The
+   `flowmatch.gitops` repo is confirmed to exist; please verify the variable
+   group manually in `Commercial Digitalization` → Pipelines → Library (my
+   API session's PAT lacks scope/has expired for that check).
 5. Run each pipeline once (or let the `main` branch trigger fire) to build,
    scan, push, and deploy to `dev`.
 
