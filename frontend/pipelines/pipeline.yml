@@ -1,0 +1,118 @@
+# FlowMatch frontend CI/CD pipeline.
+# See backend/pipelines/pipeline.yml for the full prerequisites list (SSH
+# key, ACR name, variable groups) - they're shared across both apps in this
+# Foundation.
+
+resources:
+  repositories:
+    - repository: templates
+      name: DevelopmentExcellence/devops.templates.kubernetes
+      type: git
+      ref: refs/tags/6 # bump to the latest tag: check the repo's Tags list
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - aind/FlowMatch/frontend/*
+
+parameters:
+  - name: imageTag
+    type: string
+    default: $(Build.BuildNumber)
+  - name: skipSecurityScanWithCrReason
+    type: string
+    default: " "
+  - name: environments
+    type: object
+    default:
+      - dev
+      # - uat
+      # - prd
+
+pool: devops-platform-ubuntu
+
+stages:
+  - stage: build
+    jobs:
+      - job: build
+        steps:
+          - checkout: self
+          - bash: |
+              docker build -t flowmatch/frontend:${{ parameters.imageTag }} aind/FlowMatch/frontend
+            displayName: "Build frontend image"
+          - bash: |
+              docker save $IMAGE_NAME:$IMAGE_TAG -o $(Pipeline.Workspace)/image.tar
+            displayName: Save Docker Image
+            env:
+              IMAGE_NAME: flowmatch/frontend
+              IMAGE_TAG: ${{ parameters.imageTag }}
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: "$(Pipeline.Workspace)/image.tar"
+              artifact: "DOCKER_IMAGE_PRESCAN"
+              publishLocation: "pipeline"
+
+  - stage: scan
+    dependsOn: build
+    jobs:
+      - job: scan
+        variables:
+          - group: flowmatch-aks-dev-vars
+        steps:
+          - template: scan.yml@templates
+            parameters:
+              skipSecurityScanWithCrReason: ${{ parameters.skipSecurityScanWithCrReason }}
+              imageName: flowmatch/frontend
+
+  - stage: push
+    dependsOn: scan
+    jobs:
+      - ${{ each env in parameters.environments }}:
+          - job: push_${{env}}
+            variables:
+              - group: flowmatch-aks-${{env}}-vars
+            steps:
+              - template: push.yml@templates
+                parameters:
+                  imageName: flowmatch/frontend
+                  registryName: flowmatchregistry${{env}} # confirm with Atlas Support
+                  clientId: $(flowmatch-client-id)
+                  clientSecret: $(flowmatch-client-secret)
+                  tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
+                  ${{ if eq(env,'prd') }}:
+                    subscriptionId: 83c90639-bb01-45e3-9973-93995ef67779
+                  ${{ else }}:
+                    subscriptionId: c5a18394-3494-4adf-9d55-ee137d6f869c
+
+  - ${{ each env in parameters.environments }}:
+      - stage: deploy_${{env}}
+        jobs:
+          - job: deploy
+            variables:
+              - group: flowmatch-aks-${{env}}-vars
+            steps:
+              - template: deploy.yml@templates
+                parameters:
+                  configRepo: flowmatch.gitops
+                  pathToShuttle: aind/FlowMatch/frontend
+                  prefix: flowmatch
+                  appName: frontend
+                  environment: ${{env}}
+                  version: ${{ parameters.imageTag }}
+                  clientId: $(flowmatch-client-id)
+                  clientSecret: $(flowmatch-client-secret)
+                  alwaysRestartPods: true
+                  tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
+                  ${{ if eq(env,'prd') }}:
+                    subscriptionId: 83c90639-bb01-45e3-9973-93995ef67779
+                  ${{ else }}:
+                    subscriptionId: c5a18394-3494-4adf-9d55-ee137d6f869c
+          - job: validation
+            dependsOn: deploy
+            steps:
+              - bash: |
+                  curl --fail https://flowmatch-${{env}}.kubernetes.bankingcircle.net/health
+                displayName: "Smoke test /health"
