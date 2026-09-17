@@ -23,6 +23,8 @@
     <button data-view="dashboard" class="nav-btn active">Dashboard</button>
     <button data-view="opportunities" class="nav-btn">Opportunities</button>
     <button data-view="workflows" class="nav-btn">Workflows</button>
+    <button data-view="case-studies" class="nav-btn">Case Studies</button>
+    <button data-view="forum" class="nav-btn">Forum</button>
     <button data-view="org" class="nav-btn">Org</button>
   </nav>
   <div id="identity-box" class="hidden">
@@ -82,6 +84,9 @@
       </div>
       <div class="card login-card">
         <h2>Choose a profile</h2>
+        <button id="sso-login-btn" class="primary hidden" style="width:100%;margin-bottom:14px">🔑 Sign in with Microsoft</button>
+        <p id="sso-error" class="error"></p>
+        <p id="sso-divider" class="muted hidden" style="text-align:center;margin:6px 0">— or use a demo profile —</p>
         <p class="muted">No real SSO in this dev environment — pick any of the 239 seeded employees and a role to sign in as them.</p>
         <input id="user-search" placeholder="🔍 Search by name, role, or department..." style="margin-bottom:10px" />
         <div id="demo-user-list" class="demo-user-list"></div>
@@ -406,6 +411,72 @@
     <div id="workspace-content"></div>
   </section>
 
+  <!-- Case studies -->
+  <section id="view-case-studies" class="view hidden">
+    <div class="view-header-row">
+      <h2>💡 Case studies</h2>
+      <button class="primary" id="new-case-study-btn">+ Share what you automated</button>
+    </div>
+    <p class="muted">See what colleagues automated with AI, then ping the author if you want help setting up something similar for your own team.</p>
+    <div id="case-study-form-card" class="card hidden">
+      <label>Title<input id="cs-title" placeholder="e.g. Automated monthly reporting standardization" /></label>
+      <label>What did you automate?<textarea id="cs-what" rows="3" placeholder="Describe what used to be manual and what now happens automatically."></textarea></label>
+      <label>Tools/skills used <span class="muted">(comma-separated)</span><input id="cs-tools" placeholder="e.g. Power Automate, Python" /></label>
+      <label>Impact<input id="cs-impact" placeholder="e.g. Saves ~3 hours/month" /></label>
+      <label class="checkbox-label"><input type="checkbox" id="cs-ai-involved" checked /> AI was involved in building this</label>
+      <button class="primary" id="save-case-study-btn">Publish case study</button>
+      <button class="secondary" id="cancel-case-study-btn">Cancel</button>
+      <p id="cs-save-msg" class="success"></p>
+    </div>
+    <div id="case-study-list" class="grid-3"></div>
+  </section>
+
+  <!-- Case study detail -->
+  <section id="view-case-study-detail" class="view hidden">
+    <button class="back-btn" data-back="case-studies">&larr; Back to case studies</button>
+    <div class="card" id="cs-detail-card"></div>
+    <div class="card" id="cs-ping-card"></div>
+    <div class="card hidden" id="cs-pings-card">
+      <h3>📬 People who pinged you about this</h3>
+      <div id="cs-pings-list"></div>
+    </div>
+  </section>
+
+  <!-- Open questions forum -->
+  <section id="view-forum" class="view hidden">
+    <div class="view-header-row">
+      <h2>❓ Open questions forum</h2>
+      <button class="primary" id="new-question-btn">+ Ask a question</button>
+    </div>
+    <p class="muted">Ask something like "Who in the CEPOS team can give me an API key?" — AI scans colleagues' teams, skills, and workflow systems mentioned in your question and suggests who might know.</p>
+    <div id="question-form-card" class="card hidden">
+      <label>Question title<input id="fq-title" placeholder="e.g. Who in CEPOS can give me an API key?" /></label>
+      <label>More details <span class="muted">(optional)</span><textarea id="fq-body" rows="3"></textarea></label>
+      <button class="primary" id="save-question-btn">Post question</button>
+      <button class="secondary" id="cancel-question-btn">Cancel</button>
+      <p id="fq-save-msg" class="success"></p>
+    </div>
+    <div id="question-list"></div>
+  </section>
+
+  <!-- Forum question detail -->
+  <section id="view-forum-detail" class="view hidden">
+    <button class="back-btn" data-back="forum">&larr; Back to forum</button>
+    <div class="card" id="fq-detail-card"></div>
+    <div class="card" id="fq-suggestions-card">
+      <h3>🤖 Suggested people who might know <span class="badge ai">AI recommendation</span></h3>
+      <div id="fq-suggestions-list"></div>
+    </div>
+    <div class="card" id="fq-answers-card">
+      <h3>💬 Answers</h3>
+      <div id="fq-answers-list"></div>
+      <div class="inline-form">
+        <textarea id="fq-new-answer" rows="2" placeholder="Write an answer..."></textarea>
+        <button class="primary" id="post-answer-btn">Post answer</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Audit -->
   <section id="view-audit" class="view hidden">
     <h2>Audit trail</h2>
@@ -414,7 +485,7 @@
 
 </main>
 
-  <script src="js/api.js?v=20260907"></script>
-  <script src="js/app.js?v=20260907"></script>
+  <script src="js/api.js?v=20260917b"></script>
+  <script src="js/app.js?v=20260917b"></script>
 </body>
 </html>

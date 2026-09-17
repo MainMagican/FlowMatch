@@ -72,6 +72,8 @@ const Api = {
   demoUsers() { return this.get("/auth/demo-users"); },
   login(userId, role) { return this.post("/auth/login", { user_id: userId, role }); },
   me() { return this.get("/auth/me"); },
+  ssoConfig() { return this.get("/auth/sso/config"); },
+  ssoLoginUrl() { return this.get("/auth/sso/login-url"); },
 
   // Org
   departments() { return this.get("/org/departments"); },
@@ -138,4 +140,18 @@ const Api = {
 
   // Audit
   auditFeed() { return this.get("/audit"); },
+
+  // Case studies
+  listCaseStudies() { return this.get("/case-studies"); },
+  getCaseStudy(id) { return this.get(`/case-studies/${id}`); },
+  createCaseStudy(body) { return this.post("/case-studies", body); },
+  pingCaseStudy(id, note) { return this.post(`/case-studies/${id}/ping`, { note }); },
+  acknowledgePing(caseId, pingId) { return this.post(`/case-studies/${caseId}/pings/${pingId}/acknowledge`); },
+
+  // Open questions forum
+  listQuestions() { return this.get("/forum/questions"); },
+  getQuestion(id) { return this.get(`/forum/questions/${id}`); },
+  createQuestion(body) { return this.post("/forum/questions", body); },
+  postAnswer(questionId, bodyText) { return this.post(`/forum/questions/${questionId}/answers`, { body: bodyText }); },
+  closeQuestion(id) { return this.post(`/forum/questions/${id}/close`); },
 };

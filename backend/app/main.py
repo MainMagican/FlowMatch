@@ -17,6 +17,9 @@ from app.routers import (
     review_router,
     feedback_router,
     audit_router,
+    case_studies_router,
+    forum_router,
+    sso_router,
 )
 
 
@@ -38,6 +41,9 @@ def create_app():
     app.register_blueprint(review_router.bp)
     app.register_blueprint(feedback_router.bp)
     app.register_blueprint(audit_router.bp)
+    app.register_blueprint(case_studies_router.bp)
+    app.register_blueprint(forum_router.bp)
+    app.register_blueprint(sso_router.bp)
 
     @app.errorhandler(ApiError)
     def handle_api_error(err):

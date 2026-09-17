@@ -270,6 +270,65 @@ CREATE TABLE IF NOT EXISTS learning_feedback (
     created_at TEXT NOT NULL
 );
 
+-- Case Studies: people share what they automated so others can discover
+-- what AI/automation can do for them, then ping the author to get help
+-- setting up something similar (this session's feature request #1).
+CREATE TABLE IF NOT EXISTS case_studies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    author_id INTEGER NOT NULL REFERENCES users(id),
+    department_id INTEGER REFERENCES departments(id),
+    workflow_id INTEGER REFERENCES workflows(id),
+    what_automated TEXT NOT NULL,
+    tools_used TEXT DEFAULT '[]',   -- JSON list of skill/tool names
+    impact TEXT,                     -- e.g. "saves ~5 hours/week"
+    ai_involved INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL
+);
+
+-- A "ping" is a lightweight request from a reader to the case study author,
+-- asking for help setting up the same/similar automation.
+CREATE TABLE IF NOT EXISTS case_study_pings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    case_study_id INTEGER NOT NULL REFERENCES case_studies(id),
+    requester_id INTEGER NOT NULL REFERENCES users(id),
+    note TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',  -- pending / acknowledged
+    created_at TEXT NOT NULL
+);
+
+-- Open Questions Forum: anyone can ask a question (e.g. "who in the CEPOS
+-- team can give me an API key?") and the system scans colleagues' team
+-- membership + skills + workflow systems mentioned in the text to suggest
+-- who is likely able to help (this session's feature request #2).
+CREATE TABLE IF NOT EXISTS forum_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    body TEXT,
+    author_id INTEGER NOT NULL REFERENCES users(id),
+    status TEXT NOT NULL DEFAULT 'open',  -- open / answered / closed
+    created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS forum_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL REFERENCES forum_questions(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    body TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+
+-- Transparent, rules-based "who might know" suggestions computed once when
+-- the question is asked (same explainability principle as
+-- match_explanation_service - reasons are always shown, never a bare score).
+CREATE TABLE IF NOT EXISTS forum_question_suggestions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    question_id INTEGER NOT NULL REFERENCES forum_questions(id),
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    reasons TEXT NOT NULL DEFAULT '[]',  -- JSON list of human-readable reason strings
+    created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS audit_events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     actor_user_id INTEGER REFERENCES users(id),

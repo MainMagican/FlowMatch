@@ -43,6 +43,10 @@ async function goto(name, opts = {}, navOptions = {}) {
     else if (name === "opportunity-detail") await renderOpportunityDetail(opts.id);
     else if (name === "workspace") await renderWorkspace(opts.opportunityId);
     else if (name === "audit") await renderAudit();
+    else if (name === "case-studies") await renderCaseStudies();
+    else if (name === "case-study-detail") await renderCaseStudyDetail(opts.id);
+    else if (name === "forum") await renderForum();
+    else if (name === "forum-detail") await renderForumDetail(opts.id);
   } catch (err) {
     console.error(err);
     alert(err.message || "Something went wrong.");
@@ -107,6 +111,7 @@ const FEATURED_PROFILE_EMAILS = [
 let allDemoUsers = [];
 
 async function initLogin() {
+  initSsoButton();
   const list = $("#demo-user-list");
   list.innerHTML = `<p class="muted">Loading employees…</p>`;
   try {
@@ -190,6 +195,67 @@ async function doLogin(userId, role) {
     onAuthenticated();
   } catch (err) {
     $("#login-error").textContent = err.message;
+  }
+}
+
+/* ---------------- Microsoft SSO ---------------- */
+
+async function initSsoButton() {
+  const btn = $("#sso-login-btn");
+  const divider = $("#sso-divider");
+  try {
+    const cfg = await Api.ssoConfig();
+    if (cfg.enabled) {
+      btn.textContent = `🔑 Sign in with Microsoft (@${cfg.allowed_domain})`;
+      btn.classList.remove("hidden");
+      divider.classList.remove("hidden");
+    }
+  } catch (err) {
+    // SSO config endpoint unreachable/not deployed yet - just keep the
+    // button hidden and fall back to the demo picker.
+  }
+}
+
+$("#sso-login-btn").addEventListener("click", async () => {
+  try {
+    const { url } = await Api.ssoLoginUrl();
+    window.location.href = url;
+  } catch (err) {
+    $("#sso-error").textContent = err.message || "Microsoft sign-in isn't available right now.";
+  }
+});
+
+/* If we're returning from the Azure AD redirect, the backend appended
+   ?sso_token=... (success) or ?sso_error=... (failure) to this page's URL. */
+async function handleSsoRedirectParams() {
+  const params = new URLSearchParams(window.location.search);
+  const ssoToken = params.get("sso_token");
+  const ssoError = params.get("sso_error");
+  if (!ssoToken && !ssoError) return false;
+
+  // Strip the params from the address bar either way, so refreshing/back
+  // doesn't replay the login.
+  const cleanUrl = window.location.pathname + window.location.hash;
+  window.history.replaceState({}, "", cleanUrl);
+
+  if (ssoError) {
+    const el = $("#sso-error");
+    if (el) el.textContent = ssoError;
+    return false;
+  }
+
+  Api.setToken(ssoToken);
+  try {
+    const user = await Api.me();
+    Api.setUser(user);
+    state.user = user;
+    onAuthenticated();
+    return true;
+  } catch (err) {
+    Api.clearToken();
+    const el = $("#sso-error");
+    if (el) el.textContent = "Microsoft sign-in succeeded but loading your profile failed. Please try again.";
+    return false;
   }
 }
 
@@ -1480,6 +1546,177 @@ async function renderAudit() {
     </div>`).join("") : `<p class="muted">No audit events yet.</p>`;
 }
 
+/* ---------------- Case studies ---------------- */
+
+function caseStudyCard(cs) {
+  return `
+    <div class="card" data-open-case="${cs.id}" style="cursor:pointer">
+      <h3>${esc(cs.title)} ${cs.ai_involved ? '<span class="badge ai">AI</span>' : ""}</h3>
+      <p class="muted">${cs.author.avatar_emoji || "👤"} ${esc(cs.author.name)}${cs.department_name ? ` · ${esc(cs.department_name)}` : ""}</p>
+      <p>${esc(cs.what_automated)}</p>
+      ${cs.tools_used.length ? `<div>${cs.tools_used.map((t) => `<span class="pill">${esc(t)}</span>`).join(" ")}</div>` : ""}
+      ${cs.impact ? `<p class="muted">📈 ${esc(cs.impact)}</p>` : ""}
+    </div>`;
+}
+
+async function renderCaseStudies() {
+  $("#case-study-form-card").classList.add("hidden");
+  $("#cs-save-msg").textContent = "";
+  const list = await Api.listCaseStudies();
+  $("#case-study-list").innerHTML = list.length
+    ? list.map(caseStudyCard).join("")
+    : `<p class="muted">No case studies shared yet — be the first!</p>`;
+}
+
+async function renderCaseStudyDetail(id) {
+  const cs = await Api.getCaseStudy(id);
+  const isAuthor = cs.author.id === state.user.id;
+  $("#cs-detail-card").innerHTML = `
+    <h2>${esc(cs.title)} ${cs.ai_involved ? '<span class="badge ai">AI</span>' : ""}</h2>
+    <p class="muted">${cs.author.avatar_emoji || "👤"} ${esc(cs.author.name)} · ${esc(cs.author.role_title || "")}${cs.department_name ? ` · ${esc(cs.department_name)}` : ""}</p>
+    ${cs.workflow_name ? `<p class="muted">Related workflow: ${esc(cs.workflow_name)}</p>` : ""}
+    <p>${esc(cs.what_automated)}</p>
+    ${cs.tools_used.length ? `<div>${cs.tools_used.map((t) => `<span class="pill">${esc(t)}</span>`).join(" ")}</div>` : ""}
+    ${cs.impact ? `<p class="muted">📈 ${esc(cs.impact)}</p>` : ""}`;
+
+  const pingCard = $("#cs-ping-card");
+  const pingsCard = $("#cs-pings-card");
+  if (isAuthor) {
+    pingCard.classList.add("hidden");
+    pingsCard.classList.remove("hidden");
+    $("#cs-pings-list").innerHTML = cs.pings.length ? cs.pings.map((p) => `
+      <div class="list-item">
+        <strong>${p.requester.avatar_emoji || "👤"} ${esc(p.requester.name)}</strong>
+        <span class="pill${p.status === "acknowledged" ? " accent" : ""}">${esc(fmtLabel(p.status))}</span>
+        <div class="muted">${esc(p.requester.email || "")}</div>
+        ${p.note ? `<div>${esc(p.note)}</div>` : ""}
+        ${p.status === "pending" ? `<button class="secondary" data-ack-ping="${p.id}" data-case-id="${cs.id}">Mark acknowledged</button>` : ""}
+      </div>`).join("") : `<p class="muted">No one has pinged you about this yet.</p>`;
+  } else {
+    pingsCard.classList.add("hidden");
+    pingCard.classList.remove("hidden");
+    pingCard.innerHTML = `
+      <h3>🙋 Want help setting up something similar?</h3>
+      <p class="muted">Ping ${esc(cs.author.name)} and they'll be notified you're interested.</p>
+      <textarea id="cs-ping-note" rows="2" placeholder="Optional note, e.g. what you'd like help with"></textarea>
+      <button class="primary" id="send-ping-btn">📨 Ping ${esc(cs.author.name)}</button>
+      <p id="cs-ping-msg" class="success"></p>`;
+    $("#send-ping-btn").addEventListener("click", async () => {
+      try {
+        await Api.pingCaseStudy(cs.id, $("#cs-ping-note").value.trim());
+        $("#cs-ping-msg").textContent = "Pinged! They'll see your request.";
+      } catch (err) { alert(err.message); }
+    });
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const openCase = e.target.closest("[data-open-case]");
+  if (openCase) goto("case-study-detail", { id: Number(openCase.dataset.openCase) });
+  const ackBtn = e.target.closest("[data-ack-ping]");
+  if (ackBtn) {
+    Api.acknowledgePing(Number(ackBtn.dataset.caseId), Number(ackBtn.dataset.ackPing))
+      .then(() => renderCaseStudyDetail(Number(ackBtn.dataset.caseId)))
+      .catch((err) => alert(err.message));
+  }
+});
+
+$("#new-case-study-btn").addEventListener("click", () => {
+  $("#case-study-form-card").classList.toggle("hidden");
+});
+$("#cancel-case-study-btn").addEventListener("click", () => {
+  $("#case-study-form-card").classList.add("hidden");
+});
+$("#save-case-study-btn").addEventListener("click", async () => {
+  const title = $("#cs-title").value.trim();
+  const what = $("#cs-what").value.trim();
+  if (!title || !what) return alert("Title and description are required.");
+  const tools = $("#cs-tools").value.split(",").map((t) => t.trim()).filter(Boolean);
+  try {
+    await Api.createCaseStudy({
+      title, what_automated: what, tools_used: tools,
+      impact: $("#cs-impact").value.trim(), ai_involved: $("#cs-ai-involved").checked,
+    });
+    $("#cs-title").value = ""; $("#cs-what").value = ""; $("#cs-tools").value = ""; $("#cs-impact").value = "";
+    $("#case-study-form-card").classList.add("hidden");
+    renderCaseStudies();
+  } catch (err) { alert(err.message); }
+});
+
+/* ---------------- Open questions forum ---------------- */
+
+function questionCard(q) {
+  return `
+    <div class="card" data-open-question="${q.id}" style="cursor:pointer">
+      <h3>${esc(q.title)} <span class="pill${q.status === "open" ? "" : " accent"}">${esc(fmtLabel(q.status))}</span></h3>
+      <p class="muted">${q.author.avatar_emoji || "👤"} ${esc(q.author.name)}</p>
+      ${q.body ? `<p>${esc(q.body)}</p>` : ""}
+      <p class="muted">${q.answer_count} answer${q.answer_count === 1 ? "" : "s"} · 🤖 ${q.suggested_count} suggested contact${q.suggested_count === 1 ? "" : "s"}</p>
+    </div>`;
+}
+
+async function renderForum() {
+  $("#question-form-card").classList.add("hidden");
+  $("#fq-save-msg").textContent = "";
+  const list = await Api.listQuestions();
+  $("#question-list").innerHTML = list.length
+    ? list.map(questionCard).join("")
+    : `<p class="muted">No questions yet — ask the first one!</p>`;
+}
+
+async function renderForumDetail(id) {
+  const q = await Api.getQuestion(id);
+  $("#fq-detail-card").innerHTML = `
+    <h2>${esc(q.title)} <span class="pill${q.status === "open" ? "" : " accent"}">${esc(fmtLabel(q.status))}</span></h2>
+    <p class="muted">${q.author.avatar_emoji || "👤"} ${esc(q.author.name)}</p>
+    ${q.body ? `<p>${esc(q.body)}</p>` : ""}`;
+
+  $("#fq-suggestions-list").innerHTML = q.suggestions.length ? q.suggestions.map((s) => `
+    <div class="list-item">
+      <strong>${s.user.avatar_emoji || "👤"} ${esc(s.user.name)}</strong>
+      ${s.user.department_name ? `<span class="muted"> · ${esc(s.user.department_name)}</span>` : ""}
+      <ul>${s.reasons.map((r) => `<li class="muted">${esc(r)}</li>`).join("")}</ul>
+    </div>`).join("") : `<p class="muted">No strong matches found yet — try mentioning a team name or skill in your question.</p>`;
+
+  $("#fq-answers-list").innerHTML = q.answers.length ? q.answers.map((a) => `
+    <div class="list-item">
+      <strong>${a.user.avatar_emoji || "👤"} ${esc(a.user.name)}</strong>
+      <div>${esc(a.body)}</div>
+    </div>`).join("") : `<p class="muted">No answers yet.</p>`;
+
+  $("#post-answer-btn").onclick = async () => {
+    const text = $("#fq-new-answer").value.trim();
+    if (!text) return;
+    try {
+      await Api.postAnswer(id, text);
+      $("#fq-new-answer").value = "";
+      renderForumDetail(id);
+    } catch (err) { alert(err.message); }
+  };
+}
+
+document.addEventListener("click", (e) => {
+  const openQ = e.target.closest("[data-open-question]");
+  if (openQ) goto("forum-detail", { id: Number(openQ.dataset.openQuestion) });
+});
+
+$("#new-question-btn").addEventListener("click", () => {
+  $("#question-form-card").classList.toggle("hidden");
+});
+$("#cancel-question-btn").addEventListener("click", () => {
+  $("#question-form-card").classList.add("hidden");
+});
+$("#save-question-btn").addEventListener("click", async () => {
+  const title = $("#fq-title").value.trim();
+  if (!title) return alert("A question title is required.");
+  try {
+    await Api.createQuestion({ title, body: $("#fq-body").value.trim() });
+    $("#fq-title").value = ""; $("#fq-body").value = "";
+    $("#question-form-card").classList.add("hidden");
+    renderForum();
+  } catch (err) { alert(err.message); }
+});
+
 /* ---------------- Init ---------------- */
 
 (function init() {
@@ -1490,6 +1727,8 @@ async function renderAudit() {
     state.user = user;
     onAuthenticated();
   } else {
-    initLogin();
+    handleSsoRedirectParams().then((handled) => {
+      if (!handled) initLogin();
+    });
   }
 })();
