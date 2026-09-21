@@ -5,7 +5,7 @@ metadata:
 spec:
   prefix: flowmatch
   saviyntOwner: aind
-  ado_project: Commercial Digitalization
+  ado_project: CommercialDigitalization # renamed from "Commercial Digitalization" (space removed)
   quota:
     cpu: "20"
     memory: 20Gi

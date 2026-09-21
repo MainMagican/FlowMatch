@@ -16,7 +16,10 @@ DevOps Helm Blueprint** chart
   (namespace group `flowmatch-ns-dev-*`, resource group `flowmatch-aks-dev-rg`,
   Key Vault `flowmatc-aks-kv-sps-dev`, repo `flowmatch.gitops`).
 - ✅ App containerized (`backend/Dockerfile`, `frontend/Dockerfile`).
-- ✅ Exported to Azure DevOps: `Commercial Digitalization` PR #134637 (merged).
+- ✅ Exported to Azure DevOps: `CommercialDigitalization` PR #134637 (merged). (Project
+  was later renamed from `Commercial Digitalization` to `CommercialDigitalization`
+  - no space - to work around a Helm Blueprint template bug that mishandles
+  repo names containing spaces.)
 - ✅ CI/CD pipelines registered in Azure DevOps as `flowmatch-backend` and
   `flowmatch-frontend`, pointing at `aind/FlowMatch/{backend,frontend}/pipelines/pipeline.yml`.
 - ✅ Pipelines rewritten to use the `helm.yml` template (Helm Blueprint)
@@ -50,7 +53,7 @@ Each app's pipeline (`pipeline.yml`) has 4 stages:
 2. ✅ Both pipelines registered in Azure DevOps.
 3. ⏳ Confirm the `flowmatch-aks-dev-vars` variable group (with
    `flowmatch-client-id`/`flowmatch-client-secret`) exists in
-   `Commercial Digitalization` → Pipelines → Library.
+   `CommercialDigitalization` → Pipelines → Library.
 4. Run each pipeline (or let the `main` branch trigger fire) to build, scan,
    push, and deploy to `dev`.
 5. (Optional / access) Request Saviynt access to `flowmatch-aks-dev-rg`
