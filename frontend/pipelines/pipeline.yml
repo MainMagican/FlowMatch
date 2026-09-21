@@ -1,7 +1,8 @@
-# FlowMatch frontend CI/CD pipeline.
-# See backend/pipelines/pipeline.yml for the full prerequisites list (SSH
-# key, ACR name, variable groups) - they're shared across both apps in this
-# Foundation.
+# FlowMatch frontend CI/CD pipeline - Helm Blueprint based.
+# See backend/pipelines/pipeline.yml for the full prerequisites list (ACR
+# name, variable groups) - they're shared across both apps in this
+# Foundation. Shuttle has been deprecated by the platform team in favor of
+# the devops.helm.blueprint chart + helm.yml template - no SSH key needed.
 
 resources:
   repositories:
@@ -69,6 +70,10 @@ stages:
             parameters:
               skipSecurityScanWithCrReason: ${{ parameters.skipSecurityScanWithCrReason }}
               imageName: flowmatch/frontend
+              clientId: $(flowmatch-client-id)
+              clientSecret: $(flowmatch-client-secret)
+              tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
+              subscriptionId: c5a18394-3494-4adf-9d55-ee137d6f869c
 
   - stage: push
     dependsOn: scan
@@ -81,7 +86,7 @@ stages:
               - template: push.yml@templates
                 parameters:
                   imageName: flowmatch/frontend
-                  registryName: devopsplatformregistry${{env}} # confirmed shared platform ACR
+                  registryName: devopsplatformregistry${{env}}
                   clientId: $(flowmatch-client-id)
                   clientSecret: $(flowmatch-client-secret)
                   tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
@@ -97,17 +102,15 @@ stages:
             variables:
               - group: flowmatch-aks-${{env}}-vars
             steps:
-              - template: deploy.yml@templates
+              - template: helm.yml@templates
                 parameters:
                   configRepo: flowmatch.gitops
-                  pathToShuttle: aind/FlowMatch/frontend
-                  prefix: flowmatch
                   appName: frontend
+                  valuesPath: aind/FlowMatch/frontend/values
                   environment: ${{env}}
-                  version: ${{ parameters.imageTag }}
+                  prefix: flowmatch
                   clientId: $(flowmatch-client-id)
                   clientSecret: $(flowmatch-client-secret)
-                  alwaysRestartPods: true
                   tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
                   ${{ if eq(env,'prd') }}:
                     subscriptionId: 83c90639-bb01-45e3-9973-93995ef67779

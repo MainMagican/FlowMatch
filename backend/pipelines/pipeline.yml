@@ -1,21 +1,18 @@
-# FlowMatch backend CI/CD pipeline.
+# FlowMatch backend CI/CD pipeline - Helm Blueprint based.
 # Modeled on the platform's reference example:
-# https://dev.azure.com/banking-circle-payment-systems/DevelopmentExcellence/_git/devops.templates.kubernetes?path=/examples/simpleApp/pipeline.yml
+# https://dev.azure.com/banking-circle-payment-systems/DevelopmentExcellence/_git/devops.templates.kubernetes?path=/examples/helmApp/pipeline.yml
 #
-# Prerequisites (one-time, before this pipeline can run):
-#   1. Kubernetes Foundation "flowmatch" must be merged (devops.platform.configuration
-#      PR #134634 - DONE) - this creates the flowmatch-aks-dev-vars variable
-#      group (with flowmatch-client-id / flowmatch-client-secret secrets) and
+# Replaces the earlier shuttle-based pipeline: shuttle has been deprecated by
+# the platform team (confirmed by Atlas Support, 2026-09-21) in favor of the
+# devops.helm.blueprint Helm chart + the helm.yml template. No SSH key is
+# required - the config-repo checkout uses the pipeline's own identity.
+#
+# Prerequisites (one-time, already done):
+#   1. Kubernetes Foundation "flowmatch" merged (devops.platform.configuration
+#      PR #134634) - creates the flowmatch-aks-dev-vars variable group and
 #      the flowmatch.gitops repo in this Azure DevOps project.
-#   2. Generate an SSH key pair locally (`ssh-keygen`). Upload the public key
-#      to your Azure DevOps user settings (SSH public keys), and upload the
-#      private key as a Secure File named `id_shuttle_ado` in this project's
-#      Pipeline Library - shuttle uses it to push manifests to flowmatch.gitops.
-#   3. ACR: confirmed by Atlas Support - it's the shared platform registry
-#      "devopsplatformregistry<env>" (see devops.templates.kubernetes
-#      examples/helmApp/pipeline.yml), not a per-app registry.
-#   4. Create this pipeline in Azure DevOps pointing at this file, and set the
-#      imageTag default if you don't want to rely on $(Build.BuildNumber).
+#   2. ACR: shared platform registry "devopsplatformregistry<env>".
+#   3. Application values live in backend/values/<env>/<region>-aks-shared-<env>/values.yaml
 
 resources:
   repositories:
@@ -93,6 +90,10 @@ stages:
             parameters:
               skipSecurityScanWithCrReason: ${{ parameters.skipSecurityScanWithCrReason }}
               imageName: flowmatch/backend
+              clientId: $(flowmatch-client-id)
+              clientSecret: $(flowmatch-client-secret)
+              tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
+              subscriptionId: c5a18394-3494-4adf-9d55-ee137d6f869c
 
   - stage: push
     dependsOn: scan
@@ -105,7 +106,7 @@ stages:
               - template: push.yml@templates
                 parameters:
                   imageName: flowmatch/backend
-                  registryName: devopsplatformregistry${{env}} # confirmed shared platform ACR
+                  registryName: devopsplatformregistry${{env}}
                   clientId: $(flowmatch-client-id)
                   clientSecret: $(flowmatch-client-secret)
                   tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
@@ -121,17 +122,15 @@ stages:
             variables:
               - group: flowmatch-aks-${{env}}-vars
             steps:
-              - template: deploy.yml@templates
+              - template: helm.yml@templates
                 parameters:
                   configRepo: flowmatch.gitops
-                  pathToShuttle: aind/FlowMatch/backend
-                  prefix: flowmatch
                   appName: backend
+                  valuesPath: aind/FlowMatch/backend/values
                   environment: ${{env}}
-                  version: ${{ parameters.imageTag }}
+                  prefix: flowmatch
                   clientId: $(flowmatch-client-id)
                   clientSecret: $(flowmatch-client-secret)
-                  alwaysRestartPods: true
                   tenantId: 1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1
                   ${{ if eq(env,'prd') }}:
                     subscriptionId: 83c90639-bb01-45e3-9973-93995ef67779

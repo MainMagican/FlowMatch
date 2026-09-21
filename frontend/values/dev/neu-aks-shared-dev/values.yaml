@@ -1,0 +1,30 @@
+environment: dev
+region: neu
+
+app:
+  prefix: flowmatch
+  name: frontend
+  healthCheck:
+    enabled: true
+    endpoint: /health
+    timeoutSeconds: 30
+
+image:
+  name: flowmatch/frontend
+  port: 8080
+  # tag intentionally omitted: the helm.yml pipeline template injects the
+  # build's image tag automatically at deploy time (matches push.yml).
+
+deployment:
+  replicas: 1
+
+resources:
+  cpu: "0.2"
+  memory: "64Mi"
+
+ingress:
+  enabled: true
+  dns: flowmatch
+
+envVariables:
+  API_BASE_URL: "https://flowmatch-backend-dev.kubernetes.bankingcircle.net/api"

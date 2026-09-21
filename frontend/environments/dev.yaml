@@ -1,4 +1,0 @@
-hostNames:
-  - flowmatch-dev.kubernetes.bankingcircle.net
-envVariables:
-  API_BASE_URL: https://flowmatch-backend-dev.kubernetes.bankingcircle.net/api
