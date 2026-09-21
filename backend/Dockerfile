@@ -15,13 +15,20 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 
 # The seeded demo database is regenerated on first run (see app/seed.py).
-# Point FLOWMATCH_DB_PATH at a mounted volume to persist it across restarts.
-ENV FLOWMATCH_DB_PATH=/data/flowmatch.db
-RUN mkdir -p /data
+# Written under /tmp: the Helm Blueprint's default pod securityContext sets
+# readOnlyRootFilesystem, so /data (baked into the image's read-only layer)
+# is not actually writable at runtime. /tmp is backed by a writable emptyDir
+# even under that policy. This means the DB does not persist across pod
+# restarts, which is acceptable for this demo app (see app/seed.py).
+ENV FLOWMATCH_DB_PATH=/tmp/flowmatch.db
+
+# HOME=/tmp so gunicorn's control server (~/.gunicorn) also lands on the
+# writable /tmp instead of the non-root user's read-only home directory.
+ENV HOME=/tmp
 
 # Runs as a non-root user, per standard container hardening practice.
-RUN useradd --uid 10001 --create-home appuser \
-    && chown -R appuser:appuser /app /data
+RUN useradd --uid 10001 appuser \
+    && chown -R appuser:appuser /app
 USER appuser
 
 EXPOSE 8100
