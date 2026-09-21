@@ -23,6 +23,9 @@ resources:
       name: DevelopmentExcellence/devops.templates.kubernetes
       type: git
       ref: refs/tags/6 # bump to the latest tag: check the repo's Tags list
+    - repository: config-repo
+      name: Commercial Digitalization/flowmatch.gitops
+      type: git
 
 trigger:
   branches:
