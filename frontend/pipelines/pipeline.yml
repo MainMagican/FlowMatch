@@ -9,7 +9,7 @@ resources:
     - repository: templates
       name: DevelopmentExcellence/devops.templates.kubernetes
       type: git
-      ref: refs/tags/6 # bump to the latest tag: check the repo's Tags list
+      ref: refs/tags/7.7.5 # latest confirmed tag as of 2026-09-21
     - repository: config-repo
       name: CommercialDigitalization/flowmatch.gitops
       type: git
