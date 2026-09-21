@@ -1,4 +1,6 @@
 Dockerfile
-nginx.conf
-docker-entrypoint.sh
 .dockerignore
+environments
+pipelines
+shuttle.yaml
+serve.py
