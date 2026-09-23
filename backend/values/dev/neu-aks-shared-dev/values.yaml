@@ -27,6 +27,13 @@ ingress:
   dns: flowmatch-backend
 
 envVariables:
+  # The Helm Blueprint's pod securityContext sets readOnlyRootFilesystem, so
+  # the image's default /data path and the non-root user's home directory are
+  # both unwritable at runtime. /tmp is backed by a writable emptyDir even
+  # under that policy. Set here (not only in the Dockerfile) because Kubernetes
+  # env vars override the image's ENV and take effect without an image rebuild.
+  FLOWMATCH_DB_PATH: "/tmp/flowmatch.db"
+  HOME: "/tmp"
   FLOWMATCH_FRONTEND_URL: "https://flowmatch-dev.kubernetes.bankingcircle.net"
   AZURE_REDIRECT_URI: "https://flowmatch-backend-dev.kubernetes.bankingcircle.net/api/auth/sso/callback"
   SSO_ALLOWED_EMAIL_DOMAIN: "bankingcircle.com"
