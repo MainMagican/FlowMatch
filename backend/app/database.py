@@ -8,6 +8,7 @@ spec section 21.
 """
 
 import contextlib
+import os
 import sqlite3
 
 from app.config import DB_PATH
@@ -344,7 +345,18 @@ CREATE TABLE IF NOT EXISTS audit_events (
 
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    # Defensive: ensures the parent directory exists (e.g. /tmp/flowmatch
+    # for a subdirectory) and logs the resolved path, so container startup
+    # failures show exactly which path/permissions are in play.
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
+    print(f"[flowmatch] init_db: connecting to DB_PATH={DB_PATH!r}", flush=True)
+    try:
+        conn = sqlite3.connect(DB_PATH)
+    except sqlite3.OperationalError as exc:
+        print(f"[flowmatch] init_db: failed to open {DB_PATH!r}: {exc}", flush=True)
+        raise
     try:
         conn.executescript(SCHEMA)
         conn.commit()
