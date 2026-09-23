@@ -10,6 +10,11 @@
 # /config.js to /tmp/config.js so it's still served from the expected URL.
 set -e
 
+# nginx only creates the final component of its *_temp_path directories, not
+# intermediate ones, so /tmp/nginx must exist before it starts (see
+# nginx-main.conf, which redirects those paths off the read-only root fs).
+mkdir -p /tmp/nginx
+
 : "${API_BASE_URL:=}"
 envsubst '${API_BASE_URL}' < /usr/share/nginx/html/config.js.template > /tmp/config.js
 
