@@ -24,13 +24,12 @@ resources:
       name: CommercialDigitalization/flowmatch.gitops
       type: git
 
-trigger:
-  branches:
-    include:
-      - main
-  paths:
-    include:
-      - aind/FlowMatch/backend/*
+# Manual-only: deploys are run on demand from the Azure DevOps UI ("Run
+# pipeline"), never automatically on push or pull request. Without these,
+# Azure DevOps defaults to CI on every branch, so creating any branch in
+# the shared repo would start a run.
+trigger: none
+pr: none
 
 parameters:
   - name: imageTag
