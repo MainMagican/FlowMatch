@@ -9,7 +9,10 @@ resources:
     - repository: templates
       name: DevelopmentExcellence/devops.templates.kubernetes
       type: git
-      ref: refs/tags/7.7.5 # latest confirmed tag as of 2026-09-21
+      # Floating major tag: tracks the latest 7.x template release automatically
+      # instead of pinning an exact patch. Deploys are manual-only, so a template
+      # change can never land unannounced - it only applies on the next run.
+      ref: refs/tags/7
     - repository: config-repo
       name: CommercialDigitalization/flowmatch.gitops
       type: git
