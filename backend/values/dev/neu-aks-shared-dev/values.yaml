@@ -44,7 +44,13 @@ envVariables:
   FLOWMATCH_SSO_TENANT_ID: "1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1"
   SSO_ALLOWED_EMAIL_DOMAIN: "bankingcircle.com"
 
+# Each entry renders a SecretStore + ExternalSecret (extraSecrets.yaml in the
+# devops.helm.blueprint chart) and an envFrom.secretRef on the deployment.
+# keyvaultName must match the real vault exactly: the chart builds the vault
+# URL as https://<keyvaultName>.vault.azure.net and the generated Secret name
+# as <app.name>-<keyvaultName>-app-config-secret-<environment>.
+# secrets maps ENV_VAR_NAME -> Key Vault secret name.
 envFromKeyvault:
-  - keyvaultName: flowmatc-aks-kv-sps-dev
+  - keyvaultName: flowmatch-aks-kv-sps-dev
     secrets:
       FLOWMATCH_SSO_CLIENT_SECRET: FlowMatchSSO-01102026
