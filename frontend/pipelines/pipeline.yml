@@ -16,6 +16,7 @@ resources:
     - repository: config-repo
       name: CommercialDigitalization/flowmatch.gitops
       type: git
+      ref: refs/heads/main
 
 # Manual-only: deploys are run on demand from the Azure DevOps UI ("Run
 # pipeline"), never automatically on push or pull request. Without these,

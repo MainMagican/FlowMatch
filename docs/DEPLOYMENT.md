@@ -68,9 +68,25 @@ Each app's pipeline (`pipeline.yml`) has 4 stages:
 
 ## SSO
 
-Real Microsoft Entra ID SSO stays disabled until IT provides
-`AZURE_CLIENT_ID` / `AZURE_CLIENT_SECRET` / `AZURE_TENANT_ID`. Under the
-Helm Blueprint these would be added via `envFromKeyvault` in
-`backend/values/dev/neu-aks-shared-dev/values.yaml`, referencing the
-`flowmatc-aks-kv-sps-dev` Key Vault - see `docs/SSO_SETUP.md`. Until then,
-the dev-mode demo login keeps working unchanged.
+The dev backend values in `backend/values/dev/neu-aks-shared-dev/values.yaml`
+configure the FlowMatch SSO app's client ID and tenant ID in `envVariables`.
+`envFromKeyvault` maps `FLOWMATCH_SSO_CLIENT_SECRET` to the secret
+`FlowMatchSSO-01102026` in Key Vault `flowmatc-aks-kv-sps-dev`. The existing
+`flowmatch-client-id` and `flowmatch-client-secret` are deployment pipeline
+credentials, not the SSO app credentials; leave them unchanged.
+
+Before deploying, confirm the Key Vault secret is enabled and its expiration
+matches the Entra client secret's actual expiry. IT must register the Web
+redirect URI
+`https://flowmatch-backend-dev.kubernetes.bankingcircle.net/api/auth/sso/callback`.
+The backend's deployment identity must have permission to retrieve the secret.
+
+These settings only take effect after they are published to the Azure DevOps
+source repository and the backend pipeline deploys them. In Azure DevOps,
+select `Commercial Digitalization` (definition 3515), using `main` and
+`aind/FlowMatch/backend/pipelines/pipeline.yml`.
+Then verify `GET /api/auth/sso/config` returns `enabled: true` and test an
+actual Microsoft sign-in. The config flag checks credential presence, not
+credential validity. The dev-mode demo login remains available; this mapping
+does not make the application SSO-only. See `docs/SSO_SETUP.md` for the sign-in
+flow and IT prerequisites.

@@ -36,8 +36,15 @@ envVariables:
   HOME: "/tmp"
   FLOWMATCH_FRONTEND_URL: "https://flowmatch-dev.kubernetes.bankingcircle.net"
   AZURE_REDIRECT_URI: "https://flowmatch-backend-dev.kubernetes.bankingcircle.net/api/auth/sso/callback"
+  # FLOWMATCH_SSO_* rather than AZURE_*: the Azure Workload Identity webhook
+  # injects its own AZURE_CLIENT_ID / AZURE_TENANT_ID for the pod's managed
+  # identity and would overwrite these, making MSAL authenticate as the pod
+  # instead of the SSO app registration.
+  FLOWMATCH_SSO_CLIENT_ID: "0992b908-b35d-48b6-98db-fbbb81c4cc67"
+  FLOWMATCH_SSO_TENANT_ID: "1eef4a4d-f7cc-4e1e-9345-5db4051d2bc1"
   SSO_ALLOWED_EMAIL_DOMAIN: "bankingcircle.com"
-  # AZURE_CLIENT_ID / AZURE_CLIENT_SECRET / AZURE_TENANT_ID: to be added by IT
-  # as Key Vault-backed secrets (envFromKeyvault) once the Entra ID App
-  # Registration exists (see docs/SSO_SETUP.md). Until then SSO stays
-  # disabled and the dev-mode demo login keeps working.
+
+envFromKeyvault:
+  - keyvaultName: flowmatc-aks-kv-sps-dev
+    secrets:
+      FLOWMATCH_SSO_CLIENT_SECRET: FlowMatchSSO-01102026

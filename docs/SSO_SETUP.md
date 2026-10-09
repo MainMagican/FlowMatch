@@ -18,11 +18,11 @@ az ad app create `
   --sign-in-audience "AzureADMyOrg" `
   --web-redirect-uris "http://127.0.0.1:8100/api/auth/sso/callback"
 
-# Note the "appId" from the output above -> this is AZURE_CLIENT_ID
+# Note the "appId" from the output above -> this is FLOWMATCH_SSO_CLIENT_ID
 
 # 2. Create a client secret for it (needed so the backend can exchange the auth code)
 az ad app credential reset --id <APP_ID_FROM_STEP_1> --append --years 2
-# Note the "password" from the output -> this is AZURE_CLIENT_SECRET (shown only once - save it securely)
+# Note the "password" from the output -> this is FLOWMATCH_SSO_CLIENT_SECRET (shown only once - save it securely)
 
 # 3. Grant the Microsoft Graph "User.Read" delegated permission (usually already default) and admin-consent it
 az ad app permission admin-consent --id <APP_ID_FROM_STEP_1>
@@ -53,13 +53,21 @@ Also note your **Tenant ID** (Banking Circle's is `1eef4a4d-f7cc-4e1e-9345-5db40
 
 ## How to plug them in
 
+> **Why `FLOWMATCH_SSO_*` and not `AZURE_*`?** On AKS the Azure Workload
+> Identity webhook injects `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and
+> `AZURE_FEDERATED_TOKEN_FILE` into every pod for the *managed identity*.
+> Those injected values overwrite anything the chart sets, so an SSO config
+> using the plain `AZURE_*` names silently authenticates as the pod identity
+> instead of the FlowMatch app registration. The prefixed names avoid the
+> collision.
+
 Set these environment variables before starting the backend
 (`backend/app/main.py` / `python -m app.main`):
 
 ```powershell
-$env:AZURE_CLIENT_ID = "<client id>"
-$env:AZURE_CLIENT_SECRET = "<client secret>"
-$env:AZURE_TENANT_ID = "<tenant id>"
+$env:FLOWMATCH_SSO_CLIENT_ID = "<client id>"
+$env:FLOWMATCH_SSO_CLIENT_SECRET = "<client secret>"
+$env:FLOWMATCH_SSO_TENANT_ID = "<tenant id>"
 # Optional overrides (defaults shown):
 $env:AZURE_REDIRECT_URI = "http://127.0.0.1:8100/api/auth/sso/callback"
 $env:FLOWMATCH_FRONTEND_URL = "http://127.0.0.1:5600"

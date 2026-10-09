@@ -23,9 +23,15 @@ DB_PATH = os.environ.get(
 # (auth_router.py) keeps working exactly as before. IT sets these once the
 # Azure AD App Registration for FlowMatch exists in the bankingcircle.com
 # tenant.
-AZURE_CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
-AZURE_CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
-AZURE_TENANT_ID = os.environ.get("AZURE_TENANT_ID")
+#
+# Deliberately prefixed FLOWMATCH_SSO_ rather than using the plain AZURE_*
+# names: on AKS the Azure Workload Identity webhook injects its own
+# AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_FEDERATED_TOKEN_FILE into every
+# pod for the *managed identity*. Those overwrite anything set here, so MSAL
+# would authenticate as the pod identity instead of the SSO app registration.
+SSO_CLIENT_ID = os.environ.get("FLOWMATCH_SSO_CLIENT_ID")
+SSO_CLIENT_SECRET = os.environ.get("FLOWMATCH_SSO_CLIENT_SECRET")
+SSO_TENANT_ID = os.environ.get("FLOWMATCH_SSO_TENANT_ID")
 AZURE_REDIRECT_URI = os.environ.get("AZURE_REDIRECT_URI", "http://127.0.0.1:8100/api/auth/sso/callback")
 FLOWMATCH_FRONTEND_URL = os.environ.get("FLOWMATCH_FRONTEND_URL", "http://127.0.0.1:5600")
 SSO_ALLOWED_EMAIL_DOMAIN = os.environ.get("SSO_ALLOWED_EMAIL_DOMAIN", "bankingcircle.com")

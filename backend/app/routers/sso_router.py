@@ -12,8 +12,8 @@ Standard OAuth2 authorization-code flow via MSAL:
      dev-mode bearer token (app.auth.issue_token) - so every other router in
      this app keeps working completely unchanged.
 
-Fully optional / feature-flagged: when AZURE_CLIENT_ID/SECRET/TENANT_ID are
-not set (i.e. IT hasn't finished the Azure AD App Registration yet), every
+Fully optional / feature-flagged: when FLOWMATCH_SSO_CLIENT_ID/SECRET/TENANT_ID
+are not set (i.e. IT hasn't finished the Azure AD App Registration yet), every
 route here responds 503 and the frontend falls back to the existing
 dev-mode demo picker (auth_router.py). Nothing else needs to change once
 those three environment variables are set - see docs/SSO_SETUP.md.
@@ -25,12 +25,12 @@ from flask import Blueprint, jsonify, redirect, request
 
 from app.auth import issue_token
 from app.config import (
-    AZURE_CLIENT_ID,
-    AZURE_CLIENT_SECRET,
     AZURE_REDIRECT_URI,
-    AZURE_TENANT_ID,
     FLOWMATCH_FRONTEND_URL,
     SSO_ALLOWED_EMAIL_DOMAIN,
+    SSO_CLIENT_ID,
+    SSO_CLIENT_SECRET,
+    SSO_TENANT_ID,
 )
 from app.database import db_session
 from app.errors import ApiError
@@ -47,14 +47,14 @@ SCOPES = ["User.Read"]
 
 
 def sso_enabled():
-    return bool(msal and AZURE_CLIENT_ID and AZURE_CLIENT_SECRET and AZURE_TENANT_ID)
+    return bool(msal and SSO_CLIENT_ID and SSO_CLIENT_SECRET and SSO_TENANT_ID)
 
 
 def _msal_app():
     return msal.ConfidentialClientApplication(
-        AZURE_CLIENT_ID,
-        authority="https://login.microsoftonline.com/{}".format(AZURE_TENANT_ID),
-        client_credential=AZURE_CLIENT_SECRET,
+        SSO_CLIENT_ID,
+        authority="https://login.microsoftonline.com/{}".format(SSO_TENANT_ID),
+        client_credential=SSO_CLIENT_SECRET,
     )
 
 

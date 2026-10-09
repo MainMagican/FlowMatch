@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowMatch — Concept 5: Single-Column Focus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root { --bg:#fbfbfd; --surface:#fff; --ink:#1c2033; --muted:#767b91; --line:#e8e9f2; --accent:#5b53ff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Inter',system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+  header { display:flex; align-items:center; justify-content:space-between; padding:20px 32px; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:700; font-family:'Space Grotesk',sans-serif; }
+  nav a { color:var(--muted); text-decoration:none; font-size:.8rem; }
+
+  main { max-width:440px; margin:0 auto; padding:40px 24px 80px; text-align:center; }
+  .badge { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:5px 14px; font-size:.72rem; color:var(--muted); margin-bottom:22px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:1.9rem; line-height:1.2; margin:0 0 12px; letter-spacing:-0.01em; }
+  .lead { color:var(--muted); font-size:.9rem; line-height:1.6; margin:0 0 32px; }
+
+  .login-card { background:var(--surface); border:1px solid var(--line); border-radius:18px; padding:28px; text-align:left; box-shadow:0 6px 20px rgba(30,34,70,.05); }
+  .login-card h2 { font-family:'Space Grotesk',sans-serif; font-size:1.05rem; margin:0 0 18px; text-align:center; }
+  .sso-btn { width:100%; padding:12px; background:var(--accent); color:#fff; border:none; border-radius:10px; font-size:.86rem; font-weight:600; cursor:pointer; margin-bottom:14px; font-family:inherit; }
+  .divider { text-align:center; color:var(--muted); font-size:.73rem; margin:14px 0; }
+  input[type="search"] { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:10px; font-size:.85rem; margin-bottom:12px; font-family:inherit; background:var(--bg); }
+  input[type="search"]:focus { outline:none; border-color:var(--accent); }
+  .user-list { display:flex; flex-direction:column; gap:2px; max-height:210px; overflow-y:auto; }
+  .user-row { display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:8px; cursor:pointer; }
+  .user-row:hover { background:var(--bg); }
+  .avatar { width:28px; height:28px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:.85rem; flex-shrink:0; }
+  .u-name { font-size:.83rem; font-weight:600; }
+  .u-role { font-size:.71rem; color:var(--muted); }
+
+  details.more { margin-top:32px; text-align:left; }
+  details.more summary { cursor:pointer; text-align:center; color:var(--muted); font-size:.82rem; list-style:none; padding:10px 0; border-top:1px solid var(--line); }
+  details.more summary::-webkit-details-marker { display:none; }
+  details.more summary::after { content:" ↓"; }
+  details.more[open] summary::after { content:" ↑"; }
+  .feature-strip { display:flex; flex-direction:column; gap:14px; padding-top:14px; }
+  .feature-strip .row { display:flex; gap:12px; align-items:flex-start; }
+  .feature-strip .row .icon { font-size:1rem; margin-top:1px; }
+  .feature-strip h3 { margin:0 0 2px; font-size:.85rem; }
+  .feature-strip p { margin:0; font-size:.78rem; color:var(--muted); line-height:1.45; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">⚡ FlowMatch</div>
+  <nav><a href="index.html">&larr; back to all concepts</a></nav>
+</header>
+<main>
+  <span class="badge">✨ Explainable · Human-reviewed · Bias-free</span>
+  <h1>Work smarter, not harder.</h1>
+  <p class="lead">FlowMatch connects people, skills and workflows across the whole company.</p>
+
+  <div class="login-card">
+    <h2>Choose a profile</h2>
+    <button class="sso-btn">🔑 Sign in with Microsoft</button>
+    <div class="divider">— or use a demo profile —</div>
+    <input type="search" placeholder="🔍 Search by name, role, or department..." />
+    <div class="user-list">
+      <div class="user-row"><span class="avatar">🧭</span><div><div class="u-name">Ainars Djatlevskis</div><div class="u-role">Client Technology</div></div></div>
+      <div class="user-row"><span class="avatar">🗂️</span><div><div class="u-name">Reanne Lord-Simpson</div><div class="u-role">Business AML</div></div></div>
+      <div class="user-row"><span class="avatar">👩‍💼</span><div><div class="u-name">Hamida Khanom</div><div class="u-role">Business AML</div></div></div>
+    </div>
+  </div>
+
+  <details class="more">
+    <summary>See how it works</summary>
+    <div class="feature-strip">
+      <div class="row"><span class="icon">🧩</span><div><h3>Break down the silos</h3><p>See how work actually flows end-to-end, across every department.</p></div></div>
+      <div class="row"><span class="icon">🚀</span><div><h3>Grow beyond your team</h3><p>Learn from colleagues elsewhere in the company through shadowing.</p></div></div>
+      <div class="row"><span class="icon">📤</span><div><h3>Share the load</h3><p>Push backlog tasks out so anyone with the right skill can help.</p></div></div>
+      <div class="row"><span class="icon">🤖</span><div><h3>Discover with AI</h3><p>AI flags colleagues facing similar challenges across departments.</p></div></div>
+    </div>
+  </details>
+</main>
+</body>
+</html>

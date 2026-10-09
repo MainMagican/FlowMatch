@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowMatch — Concept 1: Mono Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#111; --muted:#6b6b6b; --line:#dcdcdc; --accent:#111; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Inter',system-ui,sans-serif; color:var(--ink); background:#fff; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:22px 40px; border-bottom:1px solid var(--line); }
+  .brand { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem; letter-spacing:-0.01em; }
+  .brand span { font-weight:400; color:var(--muted); }
+  nav a { color:var(--muted); text-decoration:none; font-size:.82rem; margin-left:22px; }
+
+  main { max-width:1080px; margin:0 auto; padding:64px 40px 100px; display:grid; grid-template-columns:1.2fr 1fr; gap:64px; }
+
+  .eyebrow { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); margin-bottom:18px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:3rem; line-height:1.05; margin:0 0 20px; letter-spacing:-0.02em; }
+  .lead { color:var(--muted); font-size:1.02rem; line-height:1.6; max-width:46ch; margin:0 0 44px; }
+
+  .feature-list { border-top:1px solid var(--line); }
+  .feature { display:grid; grid-template-columns:40px 1fr; gap:18px; padding:22px 0; border-bottom:1px solid var(--line); }
+  .feature .idx { font-family:'Space Grotesk',sans-serif; font-weight:600; color:var(--muted); }
+  .feature h3 { margin:0 0 4px; font-size:.98rem; }
+  .feature p { margin:0; color:var(--muted); font-size:.86rem; line-height:1.5; }
+
+  .login { border:1px solid var(--line); padding:32px; position:sticky; top:40px; height:max-content; }
+  .login h2 { font-family:'Space Grotesk',sans-serif; font-size:1.15rem; margin:0 0 22px; }
+  .sso-btn {
+    width:100%; padding:13px; background:var(--ink); color:#fff; border:none; font-size:.88rem;
+    cursor:pointer; margin-bottom:16px; font-family:inherit; font-weight:600;
+  }
+  .divider { text-align:center; color:var(--muted); font-size:.75rem; margin:16px 0; }
+  .hint { font-size:.78rem; color:var(--muted); line-height:1.5; margin-bottom:16px; }
+  input[type="search"] {
+    width:100%; padding:11px 12px; border:1px solid var(--line); font-size:.86rem; margin-bottom:16px;
+    font-family:inherit; background:#fff;
+  }
+  input[type="search"]:focus { outline:none; border-color:var(--ink); }
+  .user-list { display:flex; flex-direction:column; gap:0; border-top:1px solid var(--line); max-height:300px; overflow-y:auto; }
+  .user-row {
+    display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line);
+    cursor:pointer; transition: padding-left .15s;
+  }
+  .user-row:hover { padding-left:6px; background:#fafafa; }
+  .avatar { width:30px; height:30px; border-radius:50%; background:#eee; display:flex; align-items:center; justify-content:center; font-size:.9rem; flex-shrink:0; }
+  .u-name { font-size:.86rem; font-weight:600; }
+  .u-role { font-size:.74rem; color:var(--muted); }
+
+  @media (max-width: 880px) { main { grid-template-columns:1fr; } h1 { font-size:2.2rem; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">FLOWMATCH <span>/ concept 1</span></div>
+  <nav><a href="index.html">&larr; back to all concepts</a></nav>
+</header>
+<main>
+  <div>
+    <div class="eyebrow">Explainable — Human-reviewed — Bias-free</div>
+    <h1>Work smarter, not harder.</h1>
+    <p class="lead">FlowMatch connects people, skills and workflows across the whole company — so nobody has to solve the same problem twice, learn in a silo, or drown in backlog alone.</p>
+
+    <div class="feature-list">
+      <div class="feature"><div class="idx">01</div><div><h3>Break down the silos</h3><p>See how work actually flows end-to-end, across every department.</p></div></div>
+      <div class="feature"><div class="idx">02</div><div><h3>Grow beyond your team</h3><p>Learn from colleagues elsewhere in the company through cross-team shadowing.</p></div></div>
+      <div class="feature"><div class="idx">03</div><div><h3>Share the load</h3><p>Push backlog tasks to the wider company — anyone with the right skills can help.</p></div></div>
+      <div class="feature"><div class="idx">04</div><div><h3>Discover with AI</h3><p>AI flags colleagues facing similar processes, so you can compare notes and reuse solutions.</p></div></div>
+    </div>
+  </div>
+
+  <div class="login">
+    <h2>Choose a profile</h2>
+    <button class="sso-btn">Sign in with Microsoft</button>
+    <div class="divider">— or use a demo profile —</div>
+    <p class="hint">No real SSO in this dev environment — pick any of the 239 seeded employees and a role to sign in as them.</p>
+    <input type="search" placeholder="Search by name, role, or department..." />
+    <div class="user-list">
+      <div class="user-row"><span class="avatar">🧭</span><div><div class="u-name">Ainars Djatlevskis</div><div class="u-role">AML Business Transformation Analyst · Client Technology</div></div></div>
+      <div class="user-row"><span class="avatar">🗂️</span><div><div class="u-name">Reanne Lord-Simpson</div><div class="u-role">Transaction Monitoring Analyst · Business AML</div></div></div>
+      <div class="user-row"><span class="avatar">👩‍💼</span><div><div class="u-name">Hamida Khanom</div><div class="u-role">KYC Onboarding Analyst · Business AML</div></div></div>
+      <div class="user-row"><span class="avatar">🧑‍🏫</span><div><div class="u-name">Patricia Goode</div><div class="u-role">AML Onsite Review Officer · Business AML</div></div></div>
+    </div>
+  </div>
+</main>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FlowMatch — Concept 2: Swiss Grid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root { --ink:#14151a; --muted:#6b6f80; --line:#d8dae2; --accent:#3652ff; --bg:#fff; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:'Inter',system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+  header {
+    display:flex; align-items:center; justify-content:space-between; padding:18px 32px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:700; font-family:'Space Grotesk',sans-serif; }
+  .brand .mark { width:22px; height:22px; background:var(--accent); display:inline-block; }
+  nav a { color:var(--muted); text-decoration:none; font-size:.8rem; }
+
+  main { max-width:1120px; margin:0 auto; padding:0; }
+  .hero {
+    display:grid; grid-template-columns: 1.3fr 1fr; border-bottom:1px solid var(--line);
+  }
+  .hero-copy { padding:56px 40px; border-right:1px solid var(--line); }
+  .tag { display:inline-block; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent); padding:4px 10px; margin-bottom:20px; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:2.6rem; line-height:1.08; margin:0 0 16px; letter-spacing:-0.01em; }
+  .lead { color:var(--muted); font-size:.98rem; line-height:1.6; max-width:48ch; margin:0; }
+
+  .login { padding:56px 40px; }
+  .login h2 { font-family:'Space Grotesk',sans-serif; font-size:1.1rem; margin:0 0 20px; }
+  .sso-btn { width:100%; padding:12px; background:var(--accent); color:#fff; border:none; font-size:.86rem; font-weight:600; cursor:pointer; margin-bottom:14px; font-family:inherit; }
+  .divider { text-align:center; color:var(--muted); font-size:.74rem; margin:14px 0; }
+  .hint { font-size:.76rem; color:var(--muted); line-height:1.5; margin-bottom:14px; }
+  input[type="search"] { width:100%; padding:10px 12px; border:1px solid var(--line); font-size:.85rem; margin-bottom:14px; font-family:inherit; }
+  input[type="search"]:focus { outline:none; border-color:var(--accent); }
+  .user-list { display:flex; flex-direction:column; gap:0; max-height:260px; overflow-y:auto; border:1px solid var(--line); }
+  .user-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .user-row:last-child { border-bottom:none; }
+  .user-row:hover { background:#f5f6fb; }
+  .avatar { width:26px; height:26px; background:var(--line); display:flex; align-items:center; justify-content:center; font-size:.8rem; flex-shrink:0; }
+  .u-name { font-size:.84rem; font-weight:600; }
+  .u-role { font-size:.72rem; color:var(--muted); }
+
+  .feature-grid { display:grid; grid-template-columns: repeat(4,1fr); }
+  .feature-grid > div { padding:32px 28px; border-right:1px solid var(--line); }
+  .feature-grid > div:last-child { border-right:none; }
+  .f-num { font-family:'Space Grotesk',sans-serif; color:var(--accent); font-weight:700; font-size:.78rem; margin-bottom:10px; display:block; }
+  .feature-grid h3 { font-size:.92rem; margin:0 0 8px; }
+  .feature-grid p { font-size:.8rem; color:var(--muted); line-height:1.5; margin:0; }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns:1fr; } .hero-copy { border-right:none; border-bottom:1px solid var(--line); }
+    .feature-grid { grid-template-columns:1fr 1fr; }
+    .feature-grid > div { border-bottom:1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="mark"></span>FLOWMATCH</div>
+  <nav><a href="index.html">&larr; back to all concepts</a></nav>
+</header>
+<main>
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="tag">Explainable · Human-reviewed · Bias-free</span>
+      <h1>Work smarter, not harder.</h1>
+      <p class="lead">FlowMatch connects people, skills and workflows across the whole company — so nobody has to solve the same problem twice, learn in a silo, or drown in backlog alone.</p>
+    </div>
+    <div class="login">
+      <h2>Choose a profile</h2>
+      <button class="sso-btn">Sign in with Microsoft</button>
+      <div class="divider">— or use a demo profile —</div>
+      <p class="hint">No real SSO in this dev environment — pick any of the 239 seeded employees and a role to sign in as them.</p>
+      <input type="search" placeholder="Search by name, role, or department..." />
+      <div class="user-list">
+        <div class="user-row"><span class="avatar">🧭</span><div><div class="u-name">Ainars Djatlevskis</div><div class="u-role">Client Technology</div></div></div>
+        <div class="user-row"><span class="avatar">🗂️</span><div><div class="u-name">Reanne Lord-Simpson</div><div class="u-role">Business AML</div></div></div>
+        <div class="user-row"><span class="avatar">👩‍💼</span><div><div class="u-name">Hamida Khanom</div><div class="u-role">Business AML</div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="feature-grid">
+    <div><span class="f-num">01</span><h3>Break down the silos</h3><p>See how work actually flows end-to-end, across every department.</p></div>
+    <div><span class="f-num">02</span><h3>Grow beyond your team</h3><p>Learn from colleagues elsewhere in the company through shadowing.</p></div>
+    <div><span class="f-num">03</span><h3>Share the load</h3><p>Push backlog tasks out so anyone with the right skill can help.</p></div>
+    <div><span class="f-num">04</span><h3>Discover with AI</h3><p>AI flags colleagues facing similar challenges across departments.</p></div>
+  </div>
+</main>
+</body>
+</html>
