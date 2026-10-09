@@ -49,8 +49,10 @@ envVariables:
 # keyvaultName must match the real vault exactly: the chart builds the vault
 # URL as https://<keyvaultName>.vault.azure.net and the generated Secret name
 # as <app.name>-<keyvaultName>-app-config-secret-<environment>.
+# NOTE: the vault really is "flowmatc" (no trailing h) - verified in the Azure
+# portal. Do not "correct" it to flowmatch.
 # secrets maps ENV_VAR_NAME -> Key Vault secret name.
 envFromKeyvault:
-  - keyvaultName: flowmatch-aks-kv-sps-dev
+  - keyvaultName: flowmatc-aks-kv-sps-dev
     secrets:
       FLOWMATCH_SSO_CLIENT_SECRET: FlowMatchSSO-01102026
